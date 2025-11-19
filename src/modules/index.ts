@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import userRoutes from './user/routes/user.routes';
 import authRoutes from './auth/routes/auth.routes';
+import fractioningRoutes from './fractioning/routes/fractioning.routes';
 
 const routes = Router();
 
 routes.use('/auth', authRoutes);
-routes.use('/users', userRoutes);
+routes.use('/fractioning', fractioningRoutes);
 
 export default routes;

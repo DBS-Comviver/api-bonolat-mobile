@@ -1,8 +1,10 @@
 import express from 'express'
 import cors from 'cors'
+import swaggerUi from 'swagger-ui-express'
 import { env } from './config/env'
 import routes from './routes'
 import { errorMiddleware } from './middlewares/error.middleware'
+import { swaggerSpec } from './config/swagger'
 
 export const app = express()
 
@@ -20,6 +22,10 @@ app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+	customCss: '.swagger-ui .topbar { display: none }',
+}))
+
 app.use(routes)
 
 app.get('/', (_, res) => {
@@ -27,6 +33,7 @@ app.get('/', (_, res) => {
         status: 'ok',
         message: `${env.APP_NAME} is running`,
         environment: env.NODE_ENV,
+        docs: '/api-docs',
     })
 })
 

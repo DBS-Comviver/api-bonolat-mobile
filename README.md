@@ -1,6 +1,6 @@
 # Mobile Backend Base
 
-Backend base escalável e modular para aplicações mobile, construído com Node.js, TypeScript, Express, Prisma e PostgreSQL.
+Backend base escalável e modular para aplicações mobile, construído com Node.js, TypeScript, Express, Prisma e MySQL, integrado com API TOTVS/Datasul.
 
 ## 🚀 Características
 
@@ -16,7 +16,7 @@ Backend base escalável e modular para aplicações mobile, construído com Node
 ## 📋 Pré-requisitos
 
 - Node.js 22+ 
-- PostgreSQL 12+
+- MySQL 8+
 - npm ou yarn
 
 ## 🛠️ Instalação
@@ -223,18 +223,17 @@ Você pode configurar o banco de dados de duas formas:
 
 **Opção 1: Usando DATABASE_URL (recomendado para produção)**
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/mobile_backend?schema=public
+DATABASE_URL=mysql://user:password@localhost:3306/portal_dbs
 ```
 
 **Opção 2: Usando variáveis individuais (recomendado para desenvolvimento)**
 ```env
-DB_TYPE=postgresql
+DB_TYPE=mysql
 DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=sua_senha
-DB_NAME=mobile_backend_dev
-DB_SCHEMA=public
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=portal_dbs
 ```
 
 A aplicação construirá automaticamente a `DATABASE_URL` a partir das variáveis individuais se `DATABASE_URL` não estiver definida.
@@ -245,14 +244,13 @@ A aplicação construirá automaticamente a `DATABASE_URL` a partir das variáve
 PORT=3333
 NODE_ENV=development
 
-# Configuração do banco de dados (usando variáveis individuais)
-DB_TYPE=postgresql
+# MySQL Database Configuration
+DB_TYPE=mysql
 DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=sua_senha_aqui
-DB_NAME=mobile_backend_dev
-DB_SCHEMA=public
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=portal_dbs
 
 # JWT Configuration
 JWT_SECRET=development-secret-key-change-in-production-min-32-characters-long
@@ -262,7 +260,11 @@ JWT_REFRESH_EXPIRES_IN=30d
 # Application
 APP_NAME=mobile-backend-base
 BCRYPT_ROUNDS=10
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=*
+
+# TOTVS/Datasul API Configuration
+TOTVS_API_BASE_URL=http://totvs-homolog.asperbras.com/dts/datasul-rest
+TOTVS_API_ENVIRONMENT=homolog
 ```
 
 ### Exemplo de Arquivo .env (Production)
@@ -271,8 +273,13 @@ CORS_ORIGIN=http://localhost:3000
 PORT=3333
 NODE_ENV=production
 
-# Configuração do banco de dados (usando DATABASE_URL)
-DATABASE_URL=postgresql://production_user:strong_secure_password@db.example.com:5432/mobile_backend?schema=public
+# MySQL Database Configuration
+DB_TYPE=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=portal_dbs
 
 # JWT Configuration
 JWT_SECRET=super-secure-random-generated-secret-key-minimum-32-characters
@@ -284,6 +291,13 @@ APP_NAME=mobile-backend-base
 APP_URL=https://api.example.com
 BCRYPT_ROUNDS=12
 CORS_ORIGIN=https://app.example.com
+
+# TOTVS/Datasul API Configuration
+TOTVS_API_BASE_URL=http://totvs.asperbras.com/dts/datasul-rest
+TOTVS_API_ENVIRONMENT=production
+
+# Auto-generated DATABASE_URL from individual variables
+# DATABASE_URL=mysql://root:@localhost:3306/portal_dbs
 ```
 
 ### Tabela de Variáveis de Ambiente
@@ -292,14 +306,15 @@ CORS_ORIGIN=https://app.example.com
 |----------|-----------|--------|-------------|
 | `PORT` | Porta do servidor | `3333` | Não |
 | `NODE_ENV` | Ambiente (development/production/test) | `development` | Não |
-| `DATABASE_URL` | URL de conexão do PostgreSQL | - | Sim* |
-| `DB_TYPE` | Tipo de banco de dados | `postgresql` | Não* |
+| `DATABASE_URL` | URL de conexão do MySQL | - | Sim* |
+| `DB_TYPE` | Tipo de banco de dados | `mysql` | Não* |
 | `DB_HOST` | Host do banco de dados | `localhost` | Não* |
-| `DB_PORT` | Porta do banco de dados | `5432` | Não* |
+| `DB_PORT` | Porta do banco de dados | `3306` | Não* |
 | `DB_USER` | Usuário do banco de dados | - | Sim* |
 | `DB_PASSWORD` | Senha do banco de dados | - | Sim* |
-| `DB_NAME` | Nome do banco de dados | `mobile_backend` | Não* |
-| `DB_SCHEMA` | Schema do banco de dados | `public` | Não* |
+| `DB_NAME` | Nome do banco de dados | `portal_dbs` | Não* |
+| `TOTVS_API_BASE_URL` | URL base da API TOTVS/Datasul | `http://totvs-homolog.asperbras.com/dts/datasul-rest` | Não |
+| `TOTVS_API_ENVIRONMENT` | Ambiente da API TOTVS (homolog/production) | `homolog` | Não |
 | `JWT_SECRET` | Chave secreta para JWT (mínimo 32 caracteres) | - | Sim |
 | `JWT_EXPIRES_IN` | Tempo de expiração do token | `7d` | Não |
 | `JWT_REFRESH_EXPIRES_IN` | Tempo de expiração do refresh token | `30d` | Não |

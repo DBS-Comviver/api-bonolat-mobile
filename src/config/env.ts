@@ -8,17 +8,16 @@ function buildDatabaseUrl(): string | null {
         return null
     }
 
-    const dbType = process.env.DB_TYPE || 'postgresql'
+    const dbType = process.env.DB_TYPE || 'mysql'
     const dbUser = process.env.DB_USER
     const dbPassword = process.env.DB_PASSWORD
     const dbHost = process.env.DB_HOST || 'localhost'
-    const dbPort = process.env.DB_PORT || '5432'
-    const dbName = process.env.DB_NAME || 'mobile_backend'
-    const dbSchema = process.env.DB_SCHEMA || 'public'
+    const dbPort = process.env.DB_PORT || '3306'
+    const dbName = process.env.DB_NAME || 'portal_dbs_tst'
 
     if (dbUser && dbPassword) {
         const encodedPassword = encodeURIComponent(dbPassword)
-        return `${dbType}://${dbUser}:${encodedPassword}@${dbHost}:${dbPort}/${dbName}?schema=${dbSchema}`
+        return `${dbType}://${dbUser}:${encodedPassword}@${dbHost}:${dbPort}/${dbName}`
     }
     return null
 }
@@ -34,13 +33,12 @@ const envSchema = z.object({
 
     DATABASE_URL: z.string().min(1, 'DATABASE_URL is required. Provide either DATABASE_URL or DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME'),
 
-    DB_TYPE: z.string().default('postgresql'),
+    DB_TYPE: z.string().default('mysql'),
     DB_HOST: z.string().default('localhost'),
-    DB_PORT: z.string().default('5432'),
+    DB_PORT: z.string().default('3306'),
     DB_USER: z.string().optional(),
     DB_PASSWORD: z.string().optional(),
-    DB_NAME: z.string().default('mobile_backend'),
-    DB_SCHEMA: z.string().default('public'),
+    DB_NAME: z.string().default('portal_dbs'),
 
     JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters long'),
     JWT_EXPIRES_IN: z.string().default('7d'),
@@ -51,6 +49,9 @@ const envSchema = z.object({
 
     BCRYPT_ROUNDS: z.string().default('10'),
     CORS_ORIGIN: z.string(),
+
+    TOTVS_API_BASE_URL: z.string().default('http://totvs-homolog.asperbras.com/dts/datasul-rest'),
+    TOTVS_API_ENVIRONMENT: z.enum(['homolog', 'production']).default('homolog'),
 })
 
 function loadEnv() {

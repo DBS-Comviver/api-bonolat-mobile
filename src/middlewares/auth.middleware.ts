@@ -6,8 +6,7 @@ import { logger } from '../config/logger';
 
 export interface AuthRequest extends Request {
 	user?: {
-		userId: number;
-		email: string;
+		login: string;
 	};
 }
 
@@ -44,7 +43,7 @@ export const authMiddleware = async (
 		const session = await prisma.session.findFirst({
 			where: {
 				token,
-				userId: payload.userId,
+				login: payload.login,
 				expiresAt: {
 					gt: new Date(),
 				},
@@ -53,7 +52,7 @@ export const authMiddleware = async (
 
 		if (!session) {
 			logger.warn('Authentication failed: session expired or invalid', {
-				userId: payload.userId,
+				login: payload.login,
 				path: req.path,
 				method: req.method,
 				ip: req.ip,
@@ -62,8 +61,7 @@ export const authMiddleware = async (
 		}
 
 		logger.debug('Authentication successful', {
-			userId: payload.userId,
-			email: payload.email,
+			login: payload.login,
 			path: req.path,
 		});
 

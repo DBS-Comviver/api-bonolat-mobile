@@ -1,34 +1,44 @@
 import { LoginDTO } from '../dtos/login.dto';
-import { UserService } from '../../user/services/user.service';
 import { SessionRepository } from '../repositories/session.repository';
+import { PermissionRepository } from '../repositories/permission.repository';
+import { TotvsService } from '../../../services/totvs.service';
 import { JWTUtil } from '../../../utils/jwt';
 import { env } from '../../../config/env';
 import { DateUtil } from '../../../utils/date';
 import { logger } from '../../../config/logger';
+import { ForbiddenError } from '../../../utils/errors';
 
 export interface AuthResponse {
 	user: {
-		id: number;
-		name: string;
-		username: string;
-		email: string;
+		login: string;
+		nome: string | null;
+		permissions: {
+			administrador: number | null;
+			financeiro: number;
+			fiscal: number;
+			controles: number;
+			estoque: number | null;
+			faturamento: number | null;
+		};
 	};
 	token: string;
 	refreshToken: string;
 }
 
 export class AuthService {
-	private userService = new UserService();
 	private sessionRepository = new SessionRepository();
+	private permissionRepository = new PermissionRepository();
+	private totvsService = new TotvsService();
 
 	async login(data: LoginDTO): Promise<AuthResponse> {
 		logger.debug('Login attempt', { username: data.username });
 
-		const user = await this.userService.validatePassword(data.username, data.password);
+		const totvsResponse = await this.totvsService.validateLogin(data.username, data.password);
+
+		const permissions = await this.permissionRepository.findByLogin(data.username);
 
 		const payload = {
-			userId: user.id,
-			email: user.email,
+			login: data.username,
 		};
 
 		const token = JWTUtil.generateToken(payload);
@@ -38,30 +48,36 @@ export class AuthService {
 
 		try {
 			await this.sessionRepository.create({
-				userId: user.id,
+				login: data.username,
 				token,
 				expiresAt,
 			});
 		} catch (error: any) {
 			if (error?.code === 'P2002' && error?.meta?.target?.includes('token')) {
-				logger.warn('Token collision detected, generating new token', { userId: user.id });
+				logger.warn('Token collision detected, generating new token', { login: data.username });
 				const newToken = JWTUtil.generateToken(payload);
 				const newRefreshToken = JWTUtil.generateRefreshToken(payload);
 
 				await this.sessionRepository.create({
-					userId: user.id,
+					login: data.username,
 					token: newToken,
 					expiresAt,
 				});
 
-				logger.info('User logged in successfully', { userId: user.id, username: user.username, email: user.email });
+				logger.info('User logged in successfully', { login: data.username, nome: permissions.nome });
 
 				return {
 					user: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						email: user.email,
+						login: data.username,
+						nome: permissions.nome,
+						permissions: {
+							administrador: permissions.administrador,
+							financeiro: permissions.financeiro,
+							fiscal: permissions.fiscal,
+							controles: permissions.controles,
+							estoque: permissions.estoque,
+							faturamento: permissions.faturamento,
+						},
 					},
 					token: newToken,
 					refreshToken: newRefreshToken,
@@ -70,14 +86,20 @@ export class AuthService {
 			throw error;
 		}
 
-		logger.info('User logged in successfully', { userId: user.id, username: user.username, email: user.email });
+		logger.info('User logged in successfully', { login: data.username, nome: permissions.nome });
 
 		return {
 			user: {
-				id: user.id,
-				name: user.name,
-				username: user.username,
-				email: user.email,
+				login: data.username,
+				nome: permissions.nome,
+				permissions: {
+					administrador: permissions.administrador,
+					financeiro: permissions.financeiro,
+					fiscal: permissions.fiscal,
+					controles: permissions.controles,
+					estoque: permissions.estoque,
+					faturamento: permissions.faturamento,
+				},
 			},
 			token,
 			refreshToken,
@@ -90,21 +112,20 @@ export class AuthService {
 		logger.info('User logged out successfully');
 	}
 
-	async logoutAll(userId: number): Promise<void> {
-		logger.info('Logout all sessions request', { userId });
-		await this.sessionRepository.deleteAllUserSessions(userId);
-		logger.info('All sessions logged out successfully', { userId });
+	async logoutAll(login: string): Promise<void> {
+		logger.info('Logout all sessions request', { login });
+		await this.sessionRepository.deleteAllUserSessions(login);
+		logger.info('All sessions logged out successfully', { login });
 	}
 
 	async refreshToken(refreshToken: string): Promise<AuthResponse> {
 		logger.debug('Token refresh request');
 
 		const payload = JWTUtil.verifyToken(refreshToken);
-		const user = await this.userService.getUserById(payload.userId);
+		const permissions = await this.permissionRepository.findByLogin(payload.login);
 
 		const newPayload = {
-			userId: user.id,
-			email: user.email,
+			login: payload.login,
 		};
 
 		const newToken = JWTUtil.generateToken(newPayload);
@@ -113,19 +134,25 @@ export class AuthService {
 		const expiresAt = DateUtil.parseExpiration(env.JWT_EXPIRES_IN);
 
 		await this.sessionRepository.create({
-			userId: user.id,
+			login: payload.login,
 			token: newToken,
 			expiresAt,
 		});
 
-		logger.info('Token refreshed successfully', { userId: user.id });
+		logger.info('Token refreshed successfully', { login: payload.login });
 
 		return {
 			user: {
-				id: user.id,
-				name: user.name,
-				username: user.username,
-				email: user.email,
+				login: payload.login,
+				nome: permissions.nome,
+				permissions: {
+					administrador: permissions.administrador,
+					financeiro: permissions.financeiro,
+					fiscal: permissions.fiscal,
+					controles: permissions.controles,
+					estoque: permissions.estoque,
+					faturamento: permissions.faturamento,
+				},
 			},
 			token: newToken,
 			refreshToken: newRefreshToken,

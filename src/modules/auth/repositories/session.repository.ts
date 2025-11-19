@@ -2,7 +2,7 @@ import { prisma } from '../../../config/database';
 
 export class SessionRepository {
 	async create(data: {
-		userId: number;
+		login: string;
 		token: string;
 		expiresAt: Date;
 	}) {
@@ -14,22 +14,13 @@ export class SessionRepository {
 	async findByToken(token: string) {
 		return prisma.session.findUnique({
 			where: { token },
-			include: {
-				user: {
-					select: {
-						id: true,
-						email: true,
-						name: true,
-					},
-				},
-			},
 		});
 	}
 
-	async findByUserId(userId: number) {
+	async findByLogin(login: string) {
 		return prisma.session.findMany({
 			where: {
-				userId,
+				login,
 				expiresAt: {
 					gt: new Date(),
 				},
@@ -43,9 +34,9 @@ export class SessionRepository {
 		});
 	}
 
-	async deleteAllUserSessions(userId: number) {
+	async deleteAllUserSessions(login: string) {
 		await prisma.session.deleteMany({
-			where: { userId },
+			where: { login },
 		});
 	}
 

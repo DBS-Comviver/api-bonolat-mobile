@@ -2,8 +2,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 
 export interface JWTPayload {
-	userId: number;
-	email: string;
+	login: string;
 	nonce?: string;
 }
 
@@ -32,8 +31,7 @@ export class JWTUtil {
 		try {
 			const decoded = jwt.verify(token, env.JWT_SECRET) as any;
 			return {
-				userId: typeof decoded.userId === 'string' ? parseInt(decoded.userId, 10) : decoded.userId,
-				email: decoded.email,
+				login: decoded.login,
 			};
 		} catch (error) {
 			throw new Error('Invalid or expired token');
