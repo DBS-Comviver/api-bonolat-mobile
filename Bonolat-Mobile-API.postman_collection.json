@@ -1,0 +1,436 @@
+{
+	"info": {
+		"_postman_id": "bonolat-mobile-api",
+		"name": "Bonolat Mobile API",
+		"description": "Coleção completa da API Bonolat Mobile - Sistema de Fracionamento",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.token);",
+									"    pm.environment.set(\"refreshToken\", jsonData.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"dbs\",\n    \"password\": \"dbs@1234\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica o usuário e retorna token de acesso e refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Faz logout do usuário, invalidando o token atual"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/logout-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout-all"
+							]
+						},
+						"description": "Faz logout de todos os dispositivos do usuário"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.token);",
+									"    pm.environment.set(\"refreshToken\", jsonData.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Renova o token de acesso usando o refresh token"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticação e autorização"
+		},
+		{
+			"name": "Fractioning",
+			"item": [
+				{
+					"name": "Get Item",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/item?it_codigo=00554-8",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"item"
+							],
+							"query": [
+								{
+									"key": "it_codigo",
+									"value": "00554-8",
+									"description": "Código do item"
+								}
+							]
+						},
+						"description": "Busca informações de um item pelo código"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Deposits",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/deposits?cod_estabel=2201&it_codigo=00554-8",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"deposits"
+							],
+							"query": [
+								{
+									"key": "cod_estabel",
+									"value": "2201",
+									"description": "Código do estabelecimento"
+								},
+								{
+									"key": "it_codigo",
+									"value": "00554-8",
+									"description": "Código do item"
+								}
+							]
+						},
+						"description": "Lista os depósitos disponíveis para um item em um estabelecimento"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Locations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/locations?cod_estabel=2201&it_codigo=00554-8&cod_deposito=SIL",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"locations"
+							],
+							"query": [
+								{
+									"key": "cod_estabel",
+									"value": "2201",
+									"description": "Código do estabelecimento"
+								},
+								{
+									"key": "it_codigo",
+									"value": "00554-8",
+									"description": "Código do item"
+								},
+								{
+									"key": "cod_deposito",
+									"value": "SIL",
+									"description": "Código do depósito"
+								}
+							]
+						},
+						"description": "Lista as localizações disponíveis para um item em um depósito"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Batches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/batches?cod_estabel=2201&it_codigo=00554-8&cod_deposito=SIL",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"batches"
+							],
+							"query": [
+								{
+									"key": "cod_estabel",
+									"value": "2201",
+									"description": "Código do estabelecimento"
+								},
+								{
+									"key": "it_codigo",
+									"value": "00554-8",
+									"description": "Código do item"
+								},
+								{
+									"key": "cod_deposito",
+									"value": "SIL",
+									"description": "Código do depósito"
+								}
+							]
+						},
+						"description": "Lista os lotes disponíveis para um item em um depósito"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Box Return",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/box-return?cod_estabel=2201&it_codigo=00554-8&cod_deposito=SIL&cod_local=SIL&cod_lote=67248&quantidade=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"box-return"
+							],
+							"query": [
+								{
+									"key": "cod_estabel",
+									"value": "2201",
+									"description": "Código do estabelecimento"
+								},
+								{
+									"key": "it_codigo",
+									"value": "00554-8",
+									"description": "Código do item"
+								},
+								{
+									"key": "cod_deposito",
+									"value": "SIL",
+									"description": "Código do depósito"
+								},
+								{
+									"key": "cod_local",
+									"value": "SIL",
+									"description": "Código da localização"
+								},
+								{
+									"key": "cod_lote",
+									"value": "67248",
+									"description": "Código do lote"
+								},
+								{
+									"key": "quantidade",
+									"value": "1",
+									"description": "Quantidade a ser fracionada"
+								}
+							]
+						},
+						"description": "Obtém informações sobre o retorno de caixa para fracionamento"
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Fractioning",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cod_estabel\": \"2201\",\n    \"it_codigo\": \"00554-8\",\n    \"cod_deposito\": \"SIL\",\n    \"cod_local\": \"SIL\",\n    \"cod_lote\": \"67248\",\n    \"quantidade\": 1,\n    \"validade\": \"20/10/2027\",\n    \"data_lote\": \"20/10/2025\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/finalize",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"finalize"
+							]
+						},
+						"description": "Finaliza o processo de fracionamento, adicionando o item ao estoque"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints do módulo de fracionamento"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3333",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
