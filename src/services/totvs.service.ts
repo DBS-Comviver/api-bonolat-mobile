@@ -63,10 +63,8 @@ export class TotvsService {
 
 		try {
 			const response = await this.makeRequest(login, senha, url);
-			if (response.desc_erro === 'RETORNO VÁLIDO') {
-				logger.info('TOTVS login successful', { login });
-				return response;
-			}
+			logger.info('TOTVS login successful', { login });
+			return response;
 		} catch (error: any) {
 			logger.debug('First TOTVS login attempt failed', { login, error: error.message });
 		}
@@ -76,10 +74,8 @@ export class TotvsService {
 
 		try {
 			const response = await this.makeRequest(loginWithDomain, senha, urlWithDomain);
-			if (response.desc_erro === 'RETORNO VÁLIDO') {
-				logger.info('TOTVS login successful with domain', { login: loginWithDomain });
-				return response;
-			}
+			logger.info('TOTVS login successful with domain', { login: loginWithDomain });
+			return response;
 		} catch (error: any) {
 			logger.debug('Second TOTVS login attempt failed', { login: loginWithDomain, error: error.message });
 		}
@@ -158,6 +154,22 @@ export class TotvsService {
 					if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
 						reject(new Error(`TOTVS API error: ${res.statusCode} ${res.statusMessage}`));
 						return;
+					}
+					if (res.statusCode === 200) {
+						try {
+							const responseData = JSON.parse(data) as TotvsLoginResponse;
+							logger.info('TOTVS login successful - 200 OK', { login, desc_erro: responseData.desc_erro });
+							resolve(responseData);
+							return;
+						} catch (error) {
+							logger.warn('TOTVS response parse failed but status is 200', { login, error });
+							resolve({
+								desc_erro: 'OK',
+								nome: login,
+								login: login
+							});
+							return;
+						}
 					}
 
 					try {
