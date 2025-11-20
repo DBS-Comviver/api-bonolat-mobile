@@ -5,12 +5,10 @@ import bcrypt from 'bcryptjs';
 
 describe('AuthController', () => {
     beforeEach(async () => {
-        await prisma.session.deleteMany();
         await prisma.user.deleteMany();
     });
 
     afterEach(async () => {
-        await prisma.session.deleteMany();
         await prisma.user.deleteMany();
     });
 

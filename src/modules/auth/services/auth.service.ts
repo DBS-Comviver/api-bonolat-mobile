@@ -3,10 +3,7 @@ import { SessionRepository } from '../repositories/session.repository';
 import { PermissionRepository } from '../repositories/permission.repository';
 import { TotvsService } from '../../../services/totvs.service';
 import { JWTUtil } from '../../../utils/jwt';
-import { env } from '../../../config/env';
-import { DateUtil } from '../../../utils/date';
 import { logger } from '../../../config/logger';
-import { ForbiddenError } from '../../../utils/errors';
 
 export interface AuthResponse {
 	user: {
@@ -43,48 +40,6 @@ export class AuthService {
 
 		const token = JWTUtil.generateToken(payload);
 		const refreshToken = JWTUtil.generateRefreshToken(payload);
-
-		const expiresAt = DateUtil.parseExpiration(env.JWT_EXPIRES_IN);
-
-		try {
-			await this.sessionRepository.create({
-				login: data.username,
-				token,
-				expiresAt,
-			});
-		} catch (error: any) {
-			if (error?.code === 'P2002' && error?.meta?.target?.includes('token')) {
-				logger.warn('Token collision detected, generating new token', { login: data.username });
-				const newToken = JWTUtil.generateToken(payload);
-				const newRefreshToken = JWTUtil.generateRefreshToken(payload);
-
-				await this.sessionRepository.create({
-					login: data.username,
-					token: newToken,
-					expiresAt,
-				});
-
-				logger.info('User logged in successfully', { login: data.username, nome: permissions.nome });
-
-				return {
-					user: {
-						login: data.username,
-						nome: permissions.nome,
-						permissions: {
-							administrador: permissions.administrador,
-							financeiro: permissions.financeiro,
-							fiscal: permissions.fiscal,
-							controles: permissions.controles,
-							estoque: permissions.estoque,
-							faturamento: permissions.faturamento,
-						},
-					},
-					token: newToken,
-					refreshToken: newRefreshToken,
-				};
-			}
-			throw error;
-		}
 
 		logger.info('User logged in successfully', { login: data.username, nome: permissions.nome });
 
@@ -130,14 +85,6 @@ export class AuthService {
 
 		const newToken = JWTUtil.generateToken(newPayload);
 		const newRefreshToken = JWTUtil.generateRefreshToken(newPayload);
-
-		const expiresAt = DateUtil.parseExpiration(env.JWT_EXPIRES_IN);
-
-		await this.sessionRepository.create({
-			login: payload.login,
-			token: newToken,
-			expiresAt,
-		});
 
 		logger.info('Token refreshed successfully', { login: payload.login });
 

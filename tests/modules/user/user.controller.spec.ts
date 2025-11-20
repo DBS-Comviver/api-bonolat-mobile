@@ -5,12 +5,12 @@ import bcrypt from 'bcryptjs';
 
 describe('UserController', () => {
 	beforeEach(async () => {
-		await prisma.session.deleteMany();
+		// Stateless authentication - no session table needed
 		await prisma.user.deleteMany();
 	});
 
 	afterEach(async () => {
-		await prisma.session.deleteMany();
+		// Stateless authentication - no session table needed
 		await prisma.user.deleteMany();
 	});
 

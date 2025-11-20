@@ -8,17 +8,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Session {
-  id        Int      @id @default(autoincrement())
-  login     String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@map("sessions")
-  @@index([login])
-  @@index([token])
-}
+// Session model removed - using stateless JWT authentication
+// No database table needed for session management
+// model Session {
+//   id        Int      @id @default(autoincrement())
+//   login     String
+//   token     String   @unique
+//   expiresAt DateTime
+//   createdAt DateTime @default(now())
+//
+//   @@map("sessions")
+//   @@index([login])
+//   @@index([token])
+// }
 
 model UsuarioAcessos {
   nome          String? @db.VarChar(50)

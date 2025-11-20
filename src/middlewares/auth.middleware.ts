@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { JWTUtil } from '../utils/jwt';
 import { UnauthorizedError } from '../utils/errors';
-import { prisma } from '../config/database';
 import { logger } from '../config/logger';
 
 export interface AuthRequest extends Request {
@@ -39,26 +38,6 @@ export const authMiddleware = async (
 		}
 
 		const payload = JWTUtil.verifyToken(token);
-
-		const session = await prisma.session.findFirst({
-			where: {
-				token,
-				login: payload.login,
-				expiresAt: {
-					gt: new Date(),
-				},
-			},
-		});
-
-		if (!session) {
-			logger.warn('Authentication failed: session expired or invalid', {
-				login: payload.login,
-				path: req.path,
-				method: req.method,
-				ip: req.ip,
-			});
-			throw new UnauthorizedError('Session expired or invalid');
-		}
 
 		logger.debug('Authentication successful', {
 			login: payload.login,

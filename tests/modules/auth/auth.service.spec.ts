@@ -13,7 +13,6 @@ describe('AuthService', () => {
 	});
 
 	afterEach(async () => {
-		await prisma.session.deleteMany();
 		await prisma.user.deleteMany();
 	});
 
@@ -41,40 +40,7 @@ describe('AuthService', () => {
 			expect(result.user.name).toBe(userData.name);
 		});
 
-		it('should create a session in database', async () => {
-			const userData = {
-				name: 'Test User',
-				username: 'testuser',
-				email: 'test@example.com',
-				password: 'password123',
-			};
-
-			const user = await userService.createUser(userData);
-			const result = await authService.login({
-				username: userData.username,
-				password: userData.password,
-			});
-
-			const session = await prisma.session.findFirst({
-				where: { token: result.token },
-			});
-
-			expect(session).toBeDefined();
-			expect(session?.userId).toBe(user.id);
-		});
-
-		it('should throw NotFoundError if credentials are invalid', async () => {
-			await expect(
-				authService.login({
-					username: 'nonexistent',
-					password: 'password123',
-				})
-			).rejects.toThrow(NotFoundError);
-		});
-	});
-
-	describe('logout', () => {
-		it('should delete session from database', async () => {
+		it('should return valid JWT token on login', async () => {
 			const userData = {
 				name: 'Test User',
 				username: 'testuser',
@@ -88,18 +54,43 @@ describe('AuthService', () => {
 				password: userData.password,
 			});
 
-			await authService.logout(result.token);
+			expect(result.token).toBeDefined();
+			expect(result.refreshToken).toBeDefined();
+			expect(typeof result.token).toBe('string');
+			expect(result.token.length).toBeGreaterThan(0);
+		});
 
-			const session = await prisma.session.findFirst({
-				where: { token: result.token },
+		it('should throw NotFoundError if credentials are invalid', async () => {
+			await expect(
+				authService.login({
+					username: 'nonexistent',
+					password: 'password123',
+				})
+			).rejects.toThrow(NotFoundError);
+		});
+	});
+
+	describe('logout', () => {
+		it('should complete logout without error', async () => {
+			const userData = {
+				name: 'Test User',
+				username: 'testuser',
+				email: 'test@example.com',
+				password: 'password123',
+			};
+
+			await userService.createUser(userData);
+			const result = await authService.login({
+				username: userData.username,
+				password: userData.password,
 			});
 
-			expect(session).toBeNull();
+			await expect(authService.logout(result.token)).resolves.not.toThrow();
 		});
 	});
 
 	describe('logoutAll', () => {
-		it('should delete all user sessions', async () => {
+		it('should complete logoutAll without error', async () => {
 			const userData = {
 				name: 'Test User',
 				username: 'testuser',
@@ -108,22 +99,16 @@ describe('AuthService', () => {
 			};
 
 			const user = await userService.createUser(userData);
-			const result1 = await authService.login({
+			await authService.login({
 				username: userData.username,
 				password: userData.password,
 			});
-			const result2 = await authService.login({
+			await authService.login({
 				username: userData.username,
 				password: userData.password,
 			});
 
-			await authService.logoutAll(user.id);
-
-			const sessions = await prisma.session.findMany({
-				where: { userId: user.id },
-			});
-
-			expect(sessions).toHaveLength(0);
+			await expect(authService.logoutAll(user.id)).resolves.not.toThrow();
 		});
 	});
 });

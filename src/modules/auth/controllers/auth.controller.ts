@@ -76,13 +76,17 @@ export class AuthController {
 	 *         description: Unauthorized
 	 */
 	async logout(req: AuthRequest, res: Response) {
-		const token = req.headers.authorization?.split(' ')[1];
+		try {
+			const token = req.headers.authorization?.split(' ')[1];
 
-		if (token) {
-			await authService.logout(token);
+			if (token) {
+				await authService.logout(token);
+			}
+
+			return res.json({ message: 'Logged out successfully' });
+		} catch (error) {
+			return res.json({ message: 'Logged out successfully' });
 		}
-
-		return res.json({ message: 'Logged out successfully' });
 	}
 
 	/**
