@@ -206,7 +206,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/fractioning/deposits?cod_estabel=2201&it_codigo=00554-8",
+							"raw": "{{base_url}}/api/fractioning/deposits?cod_estabel=2202&it_codigo=00554-8",
 							"host": [
 								"{{base_url}}"
 							],
@@ -218,7 +218,7 @@
 							"query": [
 								{
 									"key": "cod_estabel",
-									"value": "2201",
+									"value": "2202",
 									"description": "Código do estabelecimento"
 								},
 								{
@@ -243,7 +243,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/fractioning/locations?cod_estabel=2201&it_codigo=00554-8&cod_deposito=SIL",
+							"raw": "{{base_url}}/api/fractioning/locations?cod_estabel=2202&it_codigo=00554-8&cod_deposito=SIL",
 							"host": [
 								"{{base_url}}"
 							],
@@ -255,7 +255,7 @@
 							"query": [
 								{
 									"key": "cod_estabel",
-									"value": "2201",
+									"value": "2202",
 									"description": "Código do estabelecimento"
 								},
 								{
@@ -285,7 +285,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/fractioning/batches?cod_estabel=2201&it_codigo=00554-8&cod_deposito=SIL",
+							"raw": "{{base_url}}/api/fractioning/batches?cod_estabel=2202&it_codigo=00554-8&cod_deposito=SIL",
 							"host": [
 								"{{base_url}}"
 							],
@@ -297,7 +297,7 @@
 							"query": [
 								{
 									"key": "cod_estabel",
-									"value": "2201",
+									"value": "2202",
 									"description": "Código do estabelecimento"
 								},
 								{
@@ -327,7 +327,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/fractioning/box-return?cod_estabel=2201&it_codigo=00554-8&cod_deposito=SIL&cod_local=SIL&cod_lote=67248&quantidade=1",
+							"raw": "{{base_url}}/api/fractioning/box-return?cod_estabel=2202&it_codigo=00554-8&cod_deposito=SIL&cod_local=SIL&cod_lote=67248&quantidade=1",
 							"host": [
 								"{{base_url}}"
 							],
@@ -339,7 +339,7 @@
 							"query": [
 								{
 									"key": "cod_estabel",
-									"value": "2201",
+									"value": "2202",
 									"description": "Código do estabelecimento"
 								},
 								{

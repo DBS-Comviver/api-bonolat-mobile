@@ -86,7 +86,7 @@ export class FractioningController {
 	 *         required: true
 	 *         schema:
 	 *           type: string
-	 *         example: "2201"
+	 *         example: "2202"
 	 *     responses:
 	 *       200:
 	 *         description: Deposits list
@@ -132,7 +132,7 @@ export class FractioningController {
 	 *         required: true
 	 *         schema:
 	 *           type: string
-	 *         example: "2201"
+	 *         example: "2202"
 	 *       - in: query
 	 *         name: cod_deposito
 	 *         required: true
@@ -184,7 +184,7 @@ export class FractioningController {
 	 *         required: true
 	 *         schema:
 	 *           type: string
-	 *         example: "2201"
+	 *         example: "2202"
 	 *       - in: query
 	 *         name: it_codigo
 	 *         required: true
@@ -248,7 +248,7 @@ export class FractioningController {
 	 *         required: true
 	 *         schema:
 	 *           type: string
-	 *         example: "2201"
+	 *         example: "2202"
 	 *       - in: query
 	 *         name: it_codigo
 	 *         required: true
@@ -337,7 +337,7 @@ export class FractioningController {
 	 *             properties:
 	 *               cod_estabel:
 	 *                 type: string
-	 *                 example: "2201"
+	 *                 example: "2202"
 	 *               it_codigo:
 	 *                 type: string
 	 *                 description: "Box item code"
