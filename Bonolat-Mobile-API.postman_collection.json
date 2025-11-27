@@ -389,7 +389,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"cod_estabel\": \"2202\",\n    \"it_codigo\": \"00554-8\",\n    \"cod_deposito\": \"SIL\",\n    \"cod_local\": \"SIL\",\n    \"cod_lote\": \"67248\",\n    \"quantidade\": 1,\n    \"dados_baixa\": \"[{\\\"it_codigo\\\":\\\"00554-8\\\",\\\"quantidade\\\":1,\\\"cod_lote\\\":\\\"67248\\\",\\\"validade\\\":\\\"20/10/2027\\\",\\\"data_lote\\\":\\\"20/10/2025\\\"}]\",\n    \"ordem_producao\": \"12345\",\n    \"batelada\": \"BAT001\"\n}",
+							"raw": "{\n    \"cod_estabel\": \"2202\",\n    \"it_codigo\": \"3016520\",\n    \"cod_deposito\": \"SIL\",\n    \"cod_local\": \"LOC001\",\n    \"cod_lote\": \"0020998127\",\n    \"quantidade\": 1,\n    \"dados_baixa\": \"3016520,25.0,0020998127,20/10/2025,17/12/2025\",\n    \"ordem_producao\": \"12345\",\n    \"batelada\": \"BAT001\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

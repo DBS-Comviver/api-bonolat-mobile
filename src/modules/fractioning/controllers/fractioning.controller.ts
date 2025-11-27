@@ -358,12 +358,14 @@ export class FractioningController {
 	 *                 type: string
 	 *                 description: "Items data in format: Item,Quantity,Lot,ManufacturingDate,ValidityDate;Item2,Quantity2,Lot2,ManufacturingDate2,ValidityDate2"
 	 *                 example: "CONC-UVA-001,25.0,67248,20/10/2025,17/12/2025;CONC-UVA-002,30.0,66747,31/12/2999,31/12/2999"
-	*               ordem_producao:
-	*                 type: string
-	*                 description: "Production order associated with the finalization"
-	*               batelada:
-	*                 type: string
-	*                 description: "Batch identifier linked to the finalization"
+	 *               ordem_producao:
+	 *                 type: string
+	 *                 description: "Production order associated with the finalization"
+	 *                 example: "12345"
+	 *               batelada:
+	 *                 type: string
+	 *                 description: "Batch identifier linked to the finalization"
+	 *                 example: "BAT001"
 	 *     responses:
 	 *       200:
 	 *         description: Fractioning finalized successfully
@@ -392,6 +394,76 @@ export class FractioningController {
 		return res.json(result);
 	}
 
+	/**
+	 * @swagger
+	 * /api/fractioning/op-search:
+	 *   get:
+	 *     summary: Search boxes by production order and/or batch
+	 *     tags: [Fractioning]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: query
+	 *         name: ordem_producao
+	 *         required: false
+	 *         schema:
+	 *           type: string
+	 *         example: "12345"
+	 *         description: "Production order code (optional)"
+	 *       - in: query
+	 *         name: batelada
+	 *         required: false
+	 *         schema:
+	 *           type: string
+	 *         example: "BAT001"
+	 *         description: "Batch identifier (optional)"
+	 *     responses:
+	 *       200:
+	 *         description: List of boxes matching the filters
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: array
+	 *               items:
+	 *                 type: object
+	 *                 properties:
+	 *                   box_code:
+	 *                     type: string
+	 *                     example: "CAIXA001"
+	 *                   box_description:
+	 *                     type: string
+	 *                     example: "Caixa de Fracionamento"
+	 *                   lote:
+	 *                     type: string
+	 *                     example: "67248"
+	 *                   data_lote:
+	 *                     type: string
+	 *                     example: "24/10/2025"
+	 *                   quantidade:
+	 *                     type: number
+	 *                     example: 100.5
+	 *                   ordem_producao:
+	 *                     type: string
+	 *                     example: "12345"
+	 *                   batelada:
+	 *                     type: string
+	 *                     example: "BAT001"
+	 *                   cod_estabel:
+	 *                     type: string
+	 *                     example: "2202"
+	 *                   cod_deposito:
+	 *                     type: string
+	 *                     example: "SIL"
+	 *                   cod_local:
+	 *                     type: string
+	 *                     example: "LOC001"
+	 *       400:
+	 *         description: At least one filter (ordem_producao or batelada) must be provided
+	 *       401:
+	 *         description: Unauthorized
+	 *       403:
+	 *         description: Access denied to fractioning module
+	 */
 	async searchBoxes(req: AuthRequest, res: Response) {
 		if (!req.user) {
 			throw new UnauthorizedError('Unauthorized');
@@ -404,6 +476,66 @@ export class FractioningController {
 		return res.json(result);
 	}
 
+	/**
+	 * @swagger
+	 * /api/fractioning/box-items:
+	 *   get:
+	 *     summary: Get all materials (raw materials) from a specific box
+	 *     tags: [Fractioning]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: query
+	 *         name: box_code
+	 *         required: true
+	 *         schema:
+	 *           type: string
+	 *         example: "CAIXA001"
+	 *         description: "Box code"
+	 *     responses:
+	 *       200:
+	 *         description: Box materials information
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 box_code:
+	 *                   type: string
+	 *                   example: "CAIXA001"
+	 *                 materials:
+	 *                   type: array
+	 *                   items:
+	 *                     type: object
+	 *                     properties:
+	 *                       it_codigo:
+	 *                         type: string
+	 *                         example: "00554-8"
+	 *                       desc_item:
+	 *                         type: string
+	 *                         example: "LEITE UHT INTEGRAL 1L"
+	 *                       quantidade:
+	 *                         type: number
+	 *                         example: 25.5
+	 *                       lote:
+	 *                         type: string
+	 *                         example: "67248"
+	 *                       data_fabricacao:
+	 *                         type: string
+	 *                         example: "20/10/2025"
+	 *                       validade:
+	 *                         type: string
+	 *                         example: "17/12/2025"
+	 *                       rastreabilidade:
+	 *                         type: string
+	 *                         example: "Rastreabilidade info"
+	 *       401:
+	 *         description: Unauthorized
+	 *       403:
+	 *         description: Access denied to fractioning module
+	 *       404:
+	 *         description: Box not found
+	 */
 	async getBoxMaterials(req: AuthRequest, res: Response) {
 		if (!req.user) {
 			throw new UnauthorizedError('Unauthorized');
@@ -416,6 +548,75 @@ export class FractioningController {
 		return res.json(result);
 	}
 
+	/**
+	 * @swagger
+	 * /api/fractioning/print-labels:
+	 *   post:
+	 *     summary: Generate ZPL code for printing box labels
+	 *     tags: [Fractioning]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             required:
+	 *               - cod_estabel
+	 *               - cod_deposito
+	 *               - cod_local
+	 *               - box_code
+	 *               - quantidade
+	 *             properties:
+	 *               cod_estabel:
+	 *                 type: string
+	 *                 example: "2202"
+	 *               cod_deposito:
+	 *                 type: string
+	 *                 example: "SIL"
+	 *               cod_local:
+	 *                 type: string
+	 *                 example: "LOC001"
+	 *               box_code:
+	 *                 type: string
+	 *                 example: "CAIXA001"
+	 *               ordem_producao:
+	 *                 type: string
+	 *                 example: "12345"
+	 *                 description: "Production order (optional)"
+	 *               batelada:
+	 *                 type: string
+	 *                 example: "BAT001"
+	 *                 description: "Batch identifier (optional)"
+	 *               quantidade:
+	 *                 type: number
+	 *                 example: 1
+	 *                 description: "Number of labels to print"
+	 *     responses:
+	 *       200:
+	 *         description: ZPL code for label printing
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 success:
+	 *                   type: boolean
+	 *                   example: true
+	 *                 zpl:
+	 *                   type: string
+	 *                   example: "^XA^CF0,40^FO30,40^FD...^XZ"
+	 *                 message:
+	 *                   type: string
+	 *                   example: "Label generated successfully"
+	 *       401:
+	 *         description: Unauthorized
+	 *       403:
+	 *         description: Access denied to fractioning module
+	 *       404:
+	 *         description: Box not found
+	 */
 	async printLabels(req: AuthRequest, res: Response) {
 		if (!req.user) {
 			throw new UnauthorizedError('Unauthorized');
@@ -428,6 +629,38 @@ export class FractioningController {
 		return res.json(result);
 	}
 
+	/**
+	 * @swagger
+	 * /api/fractioning/op-orders:
+	 *   get:
+	 *     summary: List all production orders for the logged-in user
+	 *     tags: [Fractioning]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     responses:
+	 *       200:
+	 *         description: List of production orders
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 ordens:
+	 *                   type: array
+	 *                   items:
+	 *                     type: object
+	 *                     properties:
+	 *                       label:
+	 *                         type: string
+	 *                         example: "OP 12345"
+	 *                       value:
+	 *                         type: string
+	 *                         example: "12345"
+	 *       401:
+	 *         description: Unauthorized
+	 *       403:
+	 *         description: Access denied to fractioning module
+	 */
 	async listOrders(req: AuthRequest, res: Response) {
 		if (!req.user) {
 			throw new UnauthorizedError('Unauthorized');
@@ -440,6 +673,46 @@ export class FractioningController {
 		return res.json({ ordens: result });
 	}
 
+	/**
+	 * @swagger
+	 * /api/fractioning/op-bateladas:
+	 *   get:
+	 *     summary: List batches for the logged-in user, optionally filtered by production order
+	 *     tags: [Fractioning]
+	 *     security:
+	 *       - bearerAuth: []
+	 *     parameters:
+	 *       - in: query
+	 *         name: ordem_producao
+	 *         required: false
+	 *         schema:
+	 *           type: string
+	 *         example: "12345"
+	 *         description: "Production order code to filter batches (optional)"
+	 *     responses:
+	 *       200:
+	 *         description: List of batches
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 bateladas:
+	 *                   type: array
+	 *                   items:
+	 *                     type: object
+	 *                     properties:
+	 *                       label:
+	 *                         type: string
+	 *                         example: "BAT001"
+	 *                       value:
+	 *                         type: string
+	 *                         example: "BAT001"
+	 *       401:
+	 *         description: Unauthorized
+	 *       403:
+	 *         description: Access denied to fractioning module
+	 */
 	async listBateladas(req: AuthRequest, res: Response) {
 		if (!req.user) {
 			throw new UnauthorizedError('Unauthorized');
