@@ -43,11 +43,67 @@ export interface FractioningFinalizeResponse {
 }
 
 export class TotvsService {
+	private static sharedCookies: Map<string, string> = new Map();
+	
+	private get cookies(): Map<string, string> {
+		return TotvsService.sharedCookies;
+	}
+
 	private getBaseUrl(): string {
 		if (env.TOTVS_API_ENVIRONMENT === 'production') {
 			return 'http://totvs.asperbras.com/dts/datasul-rest';
 		}
 		return env.TOTVS_API_BASE_URL;
+	}
+
+	private getDomainKey(url: URL): string {
+		return `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}`;
+	}
+
+	private parseCookies(setCookieHeaders: string | string[] | undefined): Map<string, string> {
+		const cookieMap = new Map<string, string>();
+		
+		if (!setCookieHeaders) {
+			return cookieMap;
+		}
+
+		const headers = Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders];
+
+		for (const header of headers) {
+			if (!header) continue;
+			
+			const cookiePart = header.split(';')[0]?.trim();
+			if (!cookiePart) continue;
+			
+			const [name, value] = cookiePart.split('=');
+			if (name && value) {
+				cookieMap.set(name.trim(), value.trim());
+			}
+		}
+
+		return cookieMap;
+	}
+
+	private getCookieHeader(url: URL): string {
+		const domainKey = this.getDomainKey(url);
+		const cookies: string[] = [];
+
+		for (const [name, value] of this.cookies.entries()) {
+			if (name && value) {
+				cookies.push(`${name}=${value}`);
+			}
+		}
+
+		return cookies.join('; ');
+	}
+
+	private updateCookies(url: URL, setCookieHeaders: string | string[] | undefined): void {
+		const newCookies = this.parseCookies(setCookieHeaders);
+		
+		for (const [name, value] of newCookies.entries()) {
+			this.cookies.set(name, value);
+			logger.debug('Cookie stored', { name, domain: this.getDomainKey(url) });
+		}
 	}
 
 	private createBasicAuth(username: string, password: string): string {
@@ -90,22 +146,22 @@ export class TotvsService {
 		return this.makeRequestWithoutAuth<FractioningItemResponse>(url);
 	}
 
-	async getDeposits(cod_estabel: string, it_codigo: string): Promise<FractioningDepositResponse[]> {
+	async getDeposits(cod_estabel: string): Promise<FractioningDepositResponse[]> {
 		const baseUrl = this.getBaseUrl();
-		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=1&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}`;
+		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=1&cod_estabel=${encodeURIComponent(cod_estabel)}`;
 		return this.makeRequestWithoutAuth<FractioningDepositResponse[]>(url);
 	}
 
-	async getLocations(cod_estabel: string, it_codigo: string, cod_deposito: string): Promise<FractioningLocationResponse[]> {
+	async getLocations(cod_estabel: string, cod_deposito: string): Promise<FractioningLocationResponse[]> {
 		const baseUrl = this.getBaseUrl();
-		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=2&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}&cod_deposito=${encodeURIComponent(cod_deposito)}`;
+		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=2&cod_estabel=${encodeURIComponent(cod_estabel)}&cod_deposito=${encodeURIComponent(cod_deposito)}`;
 		return this.makeRequestWithoutAuth<FractioningLocationResponse[]>(url);
 	}
 
-	async getBatches(cod_estabel: string, it_codigo: string, cod_deposito: string): Promise<FractioningBatchResponse[]> {
+	async getBatches(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string): Promise<FractioningBatchResponse> {
 		const baseUrl = this.getBaseUrl();
-		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=3&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}&cod_deposito=${encodeURIComponent(cod_deposito)}`;
-		return this.makeRequestWithoutAuth<FractioningBatchResponse[]>(url);
+		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=3&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}&cod_deposito=${encodeURIComponent(cod_deposito)}&cod_local=${encodeURIComponent(cod_local)}`;
+		return this.makeRequestWithoutAuth<FractioningBatchResponse>(url);
 	}
 
 	async getBoxReturn(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string, cod_lote: string, quantidade: number): Promise<FractioningBoxResponse> {
@@ -114,31 +170,98 @@ export class TotvsService {
 		return this.makeRequestWithoutAuth<FractioningBoxResponse>(url);
 	}
 
-	async finalizeFractioning(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string, cod_lote: string, quantidade: number, validade: string, data_lote: string): Promise<FractioningFinalizeResponse> {
+	async finalizeFractioning(
+		cod_estabel: string,
+		it_codigo: string,
+		cod_deposito: string,
+		cod_local: string,
+		cod_lote: string,
+		quantidade: number,
+		dados_baixa: string,
+		ordem_producao?: string,
+		batelada?: string
+	): Promise<FractioningFinalizeResponse> {
 		const baseUrl = this.getBaseUrl();
-		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=6&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}&cod_deposito=${encodeURIComponent(cod_deposito)}&cod_local=${encodeURIComponent(cod_local)}&cod_lote=${encodeURIComponent(cod_lote)}&quantidade=${encodeURIComponent(quantidade)}&validade=${encodeURIComponent(validade)}&data_lote=${encodeURIComponent(data_lote)}`;
+
+		const params = new URLSearchParams({
+			tipo: '6',
+			cod_estabel,
+			it_codigo,
+			cod_deposito,
+			cod_local,
+			cod_lote,
+			quantidade: quantidade.toString(),
+			dados_baixa
+		});
+
+		if (ordem_producao) {
+			params.append('ordem_producao', ordem_producao);
+		}
+		if (batelada) {
+			params.append('batelada', batelada);
+		}
+
+		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?${params.toString()}`;
 		return this.makeRequestWithoutAuth<FractioningFinalizeResponse>(url);
 	}
 
-	private async makeRequest(login: string, senha: string, urlString: string): Promise<TotvsLoginResponse> {
+	private async makeRequest(login: string, senha: string, urlString: string, maxRedirects: number = 5): Promise<TotvsLoginResponse> {
 		return new Promise((resolve, reject) => {
+			if (maxRedirects <= 0) {
+				reject(new Error('Too many redirects'));
+				return;
+			}
+
 			const url = new URL(urlString);
 			const authHeader = this.createBasicAuth(login, senha);
+
+			const cookieHeader = this.getCookieHeader(url);
+			const headers: Record<string, string> = {
+				'Authorization': `Basic ${authHeader}`,
+				'Content-Type': 'application/json',
+			};
+
+			if (cookieHeader) {
+				headers['Cookie'] = cookieHeader;
+			}
 
 			const options = {
 				hostname: url.hostname,
 				port: url.port || (url.protocol === 'https:' ? 443 : 80),
 				path: url.pathname + url.search,
 				method: 'GET',
-				headers: {
-					'Authorization': `Basic ${authHeader}`,
-					'Content-Type': 'application/json',
-				},
+				headers,
 			};
 
 			const client = url.protocol === 'https:' ? https : http;
 
 			const req = client.request(options, (res) => {
+				if (res.headers['set-cookie']) {
+					this.updateCookies(url, res.headers['set-cookie']);
+				}
+
+				if (res.statusCode && [301, 302, 307, 308].includes(res.statusCode)) {
+					const location = res.headers.location;
+					if (location) {
+						req.destroy();
+						const redirectUrl = location.startsWith('http') 
+							? location 
+							: `${url.protocol}//${url.host}${location}`;
+						
+						logger.debug('TOTVS API redirect', { 
+							from: urlString, 
+							to: redirectUrl, 
+							statusCode: res.statusCode,
+							login 
+						});
+						
+						this.makeRequest(login, senha, redirectUrl, maxRedirects - 1)
+							.then(resolve)
+							.catch(reject);
+						return;
+					}
+				}
+
 				let data = '';
 
 				res.on('data', (chunk) => {
@@ -195,23 +318,60 @@ export class TotvsService {
 		});
 	}
 
-	private async makeRequestWithoutAuth<T>(urlString: string): Promise<T> {
+	private async makeRequestWithoutAuth<T>(urlString: string, maxRedirects: number = 5): Promise<T> {
 		return new Promise((resolve, reject) => {
+			if (maxRedirects <= 0) {
+				reject(new Error('Too many redirects'));
+				return;
+			}
+
 			const url = new URL(urlString);
+
+			const cookieHeader = this.getCookieHeader(url);
+			const headers: Record<string, string> = {
+				'Content-Type': 'application/json',
+			};
+
+			if (cookieHeader) {
+				headers['Cookie'] = cookieHeader;
+			}
 
 			const options = {
 				hostname: url.hostname,
 				port: url.port || (url.protocol === 'https:' ? 443 : 80),
 				path: url.pathname + url.search,
 				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-				},
+				headers,
 			};
 
 			const client = url.protocol === 'https:' ? https : http;
 
 			const req = client.request(options, (res) => {
+				if (res.headers['set-cookie']) {
+					this.updateCookies(url, res.headers['set-cookie']);
+				}
+
+				if (res.statusCode && [301, 302, 307, 308].includes(res.statusCode)) {
+					const location = res.headers.location;
+					if (location) {
+						req.destroy();
+						const redirectUrl = location.startsWith('http') 
+							? location 
+							: `${url.protocol}//${url.host}${location}`;
+						
+						logger.debug('TOTVS API redirect', { 
+							from: urlString, 
+							to: redirectUrl, 
+							statusCode: res.statusCode 
+						});
+						
+						this.makeRequestWithoutAuth<T>(redirectUrl, maxRedirects - 1)
+							.then(resolve)
+							.catch(reject);
+						return;
+					}
+				}
+
 				let data = '';
 
 				res.on('data', (chunk) => {

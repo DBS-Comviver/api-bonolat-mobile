@@ -389,7 +389,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"cod_estabel\": \"2201\",\n    \"it_codigo\": \"00554-8\",\n    \"cod_deposito\": \"SIL\",\n    \"cod_local\": \"SIL\",\n    \"cod_lote\": \"67248\",\n    \"quantidade\": 1,\n    \"validade\": \"20/10/2027\",\n    \"data_lote\": \"20/10/2025\"\n}",
+							"raw": "{\n    \"cod_estabel\": \"2202\",\n    \"it_codigo\": \"00554-8\",\n    \"cod_deposito\": \"SIL\",\n    \"cod_local\": \"SIL\",\n    \"cod_lote\": \"67248\",\n    \"quantidade\": 1,\n    \"dados_baixa\": \"[{\\\"it_codigo\\\":\\\"00554-8\\\",\\\"quantidade\\\":1,\\\"cod_lote\\\":\\\"67248\\\",\\\"validade\\\":\\\"20/10/2027\\\",\\\"data_lote\\\":\\\"20/10/2025\\\"}]\",\n    \"ordem_producao\": \"12345\",\n    \"batelada\": \"BAT001\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -407,7 +407,174 @@
 								"finalize"
 							]
 						},
-						"description": "Finaliza o processo de fracionamento, adicionando o item ao estoque"
+						"description": "Finaliza o processo de fracionamento, adicionando o item ao estoque e persistindo no banco SQL"
+					},
+					"response": []
+				},
+				{
+					"name": "List Orders (OP)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/op-orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"op-orders"
+							]
+						},
+						"description": "Lista todas as ordens de produção do usuário logado"
+					},
+					"response": []
+				},
+				{
+					"name": "List Bateladas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/op-bateladas?ordem_producao=12345",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"op-bateladas"
+							],
+							"query": [
+								{
+									"key": "ordem_producao",
+									"value": "12345",
+									"description": "Ordem de produção (opcional)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Lista as bateladas do usuário logado, opcionalmente filtradas por ordem de produção"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Boxes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/op-search?ordem_producao=12345&batelada=BAT001",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"op-search"
+							],
+							"query": [
+								{
+									"key": "ordem_producao",
+									"value": "12345",
+									"description": "Ordem de produção (opcional)",
+									"disabled": false
+								},
+								{
+									"key": "batelada",
+									"value": "BAT001",
+									"description": "Batelada (opcional)",
+									"disabled": false
+								}
+							]
+						},
+						"description": "Busca caixas filtradas por ordem de produção e/ou batelada. Pelo menos um dos filtros deve ser informado."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Box Materials",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/box-items?box_code=CAIXA001",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"box-items"
+							],
+							"query": [
+								{
+									"key": "box_code",
+									"value": "CAIXA001",
+									"description": "Código da caixa"
+								}
+							]
+						},
+						"description": "Obtém todos os materiais (matérias-primas) de uma caixa específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Print Labels",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cod_estabel\": \"2202\",\n    \"cod_deposito\": \"SIL\",\n    \"cod_local\": \"SIL\",\n    \"box_code\": \"CAIXA001\",\n    \"ordem_producao\": \"12345\",\n    \"batelada\": \"BAT001\",\n    \"quantidade\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/fractioning/print-labels",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"fractioning",
+								"print-labels"
+							]
+						},
+						"description": "Gera e retorna o código ZPL para impressão de etiquetas da caixa"
 					},
 					"response": []
 				}
@@ -433,4 +600,3 @@
 		}
 	]
 }
-

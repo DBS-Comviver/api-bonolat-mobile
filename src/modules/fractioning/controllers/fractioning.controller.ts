@@ -1,7 +1,19 @@
 import { Request, Response } from 'express';
 import { FractioningService } from '../services/fractioning.service';
 import { AuthRequest } from '../../../middlewares/auth.middleware';
-import { getItemSchema, getDepositsSchema, getLocationsSchema, getBatchesSchema, getBoxReturnSchema, finalizeFractioningSchema } from '../dtos/fractioning.dto';
+import {
+	getItemSchema,
+	getDepositsSchema,
+	getLocationsSchema,
+	getBatchesSchema,
+	getBoxReturnSchema,
+	finalizeFractioningSchema,
+	searchBoxesSchema,
+	getBoxMaterialsSchema,
+	printLabelSchema,
+	listOrdersSchema,
+	listBateladasSchema,
+} from '../dtos/fractioning.dto';
 import { UnauthorizedError, ForbiddenError } from '../../../utils/errors';
 import { PermissionRepository } from '../../auth/repositories/permission.repository';
 
@@ -75,12 +87,6 @@ export class FractioningController {
 	 *         schema:
 	 *           type: string
 	 *         example: "2201"
-	 *       - in: query
-	 *         name: it_codigo
-	 *         required: true
-	 *         schema:
-	 *           type: string
-	 *         example: "00554-8"
 	 *     responses:
 	 *       200:
 	 *         description: Deposits list
@@ -127,12 +133,6 @@ export class FractioningController {
 	 *         schema:
 	 *           type: string
 	 *         example: "2201"
-	 *       - in: query
-	 *         name: it_codigo
-	 *         required: true
-	 *         schema:
-	 *           type: string
-	 *         example: "00554-8"
 	 *       - in: query
 	 *         name: cod_deposito
 	 *         required: true
@@ -197,20 +197,26 @@ export class FractioningController {
 	 *         schema:
 	 *           type: string
 	 *         example: "SIL"
+	 *       - in: query
+	 *         name: cod_local
+	 *         required: true
+	 *         schema:
+	 *           type: string
+	 *         example: "LOC001"
 	 *     responses:
 	 *       200:
-	 *         description: Batches list
+	 *         description: Batch information
 	 *         content:
 	 *           application/json:
 	 *             schema:
-	 *               type: array
-	 *               items:
-	 *                 type: object
-	 *                 properties:
-	 *                   lote:
-	 *                     type: string
-	 *                   dt_lote:
-	 *                     type: string
+	 *               type: object
+	 *               properties:
+	 *                 lote:
+	 *                   type: string
+	 *                   example: "67248"
+	 *                 dt_lote:
+	 *                   type: string
+	 *                   example: "24/10/2025"
 	 *       401:
 	 *         description: Unauthorized
 	 *       403:
@@ -327,33 +333,37 @@ export class FractioningController {
 	 *               - cod_local
 	 *               - cod_lote
 	 *               - quantidade
-	 *               - validade
-	 *               - data_lote
+	 *               - dados_baixa
 	 *             properties:
 	 *               cod_estabel:
 	 *                 type: string
 	 *                 example: "2201"
 	 *               it_codigo:
 	 *                 type: string
-	 *                 example: "00554-8"
+	 *                 description: "Box item code"
+	 *                 example: "3066865"
 	 *               cod_deposito:
 	 *                 type: string
 	 *                 example: "SIL"
 	 *               cod_local:
 	 *                 type: string
-	 *                 example: "SIL"
+	 *                 example: "LOC001"
 	 *               cod_lote:
 	 *                 type: string
 	 *                 example: "67248"
 	 *               quantidade:
 	 *                 type: number
 	 *                 example: 1
-	 *               validade:
+	 *               dados_baixa:
 	 *                 type: string
-	 *                 example: "20/10/2027"
-	 *               data_lote:
-	 *                 type: string
-	 *                 example: "20/10/2025"
+	 *                 description: "Items data in format: Item,Quantity,Lot,ManufacturingDate,ValidityDate;Item2,Quantity2,Lot2,ManufacturingDate2,ValidityDate2"
+	 *                 example: "CONC-UVA-001,25.0,67248,20/10/2025,17/12/2025;CONC-UVA-002,30.0,66747,31/12/2999,31/12/2999"
+	*               ordem_producao:
+	*                 type: string
+	*                 description: "Production order associated with the finalization"
+	*               batelada:
+	*                 type: string
+	*                 description: "Batch identifier linked to the finalization"
 	 *     responses:
 	 *       200:
 	 *         description: Fractioning finalized successfully
@@ -378,8 +388,67 @@ export class FractioningController {
 		await this.validateFractioningAccess(req.user.login);
 
 		const body = finalizeFractioningSchema.parse(req.body);
-		const result = await fractioningService.finalizeFractioning(body);
+		const result = await fractioningService.finalizeFractioning(body, req.user.login);
 		return res.json(result);
 	}
-}
 
+	async searchBoxes(req: AuthRequest, res: Response) {
+		if (!req.user) {
+			throw new UnauthorizedError('Unauthorized');
+		}
+
+		await this.validateFractioningAccess(req.user.login);
+
+		const body = searchBoxesSchema.parse(req.query);
+		const result = await fractioningService.searchBoxes(body);
+		return res.json(result);
+	}
+
+	async getBoxMaterials(req: AuthRequest, res: Response) {
+		if (!req.user) {
+			throw new UnauthorizedError('Unauthorized');
+		}
+
+		await this.validateFractioningAccess(req.user.login);
+
+		const body = getBoxMaterialsSchema.parse(req.query);
+		const result = await fractioningService.getBoxMaterials(body);
+		return res.json(result);
+	}
+
+	async printLabels(req: AuthRequest, res: Response) {
+		if (!req.user) {
+			throw new UnauthorizedError('Unauthorized');
+		}
+
+		await this.validateFractioningAccess(req.user.login);
+
+		const body = printLabelSchema.parse(req.body);
+		const result = await fractioningService.buildPrintLabel(body);
+		return res.json(result);
+	}
+
+	async listOrders(req: AuthRequest, res: Response) {
+		if (!req.user) {
+			throw new UnauthorizedError('Unauthorized');
+		}
+
+		await this.validateFractioningAccess(req.user.login);
+
+		listOrdersSchema.parse(req.query);
+		const result = await fractioningService.listOrders(req.user.login);
+		return res.json({ ordens: result });
+	}
+
+	async listBateladas(req: AuthRequest, res: Response) {
+		if (!req.user) {
+			throw new UnauthorizedError('Unauthorized');
+		}
+
+		await this.validateFractioningAccess(req.user.login);
+
+		const body = listBateladasSchema.parse(req.query);
+		const result = await fractioningService.listBateladas(req.user.login, body.ordem_producao);
+		return res.json({ bateladas: result });
+	}
+}

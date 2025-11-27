@@ -34,3 +34,53 @@ model UsuarioAcessos {
 
   @@map("usuario_acessos")
 }
+
+model DbsFrCaixas {
+  cod_caixa              Int                     @id @default(autoincrement()) @map("cod_caixa")
+  cod_estabel            String                  @db.VarChar(10)
+  cod_deposito           String                  @db.VarChar(15)
+  cod_local              String                  @db.VarChar(15)
+  it_codigo              String                  @db.VarChar(20)
+  desc_item              String?                 @db.VarChar(100)
+  cod_lote               String                  @db.VarChar(45)
+  data_lote              DateTime?
+  quantidade             Decimal                 @db.Decimal(30, 5)
+  ordem_prod             Int?
+  batalada               String?                 @db.VarChar(40)
+  usuario                String?                 @db.VarChar(45)
+  data_hora_fracionamento DateTime?
+
+  itens DbsFrItensCaixa[]
+
+  @@map("dbs_fr_caixas")
+  @@index([cod_estabel])
+  @@index([ordem_prod])
+}
+
+model DbsFrItensCaixa {
+  cod_item_caixa Int                      @id @default(autoincrement()) @map("cod_item_caixa")
+  cod_caixa      Int
+  it_codigo      String                   @db.VarChar(20)
+  desc_item      String?                  @db.VarChar(100)
+  quantidade     Decimal                  @db.Decimal(30, 5)
+
+  caixa DbsFrCaixas @relation(fields: [cod_caixa], references: [cod_caixa], onDelete: Cascade)
+  lotes DbsFrLotesItensCaixa[]
+
+  @@map("dbs_fr_itens_caixa")
+  @@index([cod_caixa])
+}
+
+model DbsFrLotesItensCaixa {
+  cod_lote_it_cx  Int      @id @default(autoincrement()) @map("cod_lote_it_cx")
+  cod_item_caixa  Int
+  cod_lote        String   @db.VarChar(45)
+  data_validade   DateTime?
+  data_fabricacao DateTime?
+  quantidade      Decimal  @db.Decimal(30, 5)
+
+  item DbsFrItensCaixa @relation(fields: [cod_item_caixa], references: [cod_item_caixa], onDelete: Cascade)
+
+  @@map("dbs_fr_lotes_itens_caixa")
+  @@index([cod_item_caixa])
+}
