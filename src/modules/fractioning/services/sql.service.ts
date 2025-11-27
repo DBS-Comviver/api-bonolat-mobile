@@ -119,7 +119,7 @@ export class FractioningSqlService {
 		}
 
 		if (filters.batelada) {
-			where.batelada = { contains: filters.batelada, mode: "insensitive" };
+			where.batelada = { contains: filters.batelada };
 		}
 
 		const boxes = await prisma.dbsFrCaixas.findMany({

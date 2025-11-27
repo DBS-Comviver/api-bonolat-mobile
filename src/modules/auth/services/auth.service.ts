@@ -1,8 +1,10 @@
 import { LoginDTO } from '../dtos/login.dto';
 import { SessionRepository } from '../repositories/session.repository';
 import { PermissionRepository } from '../repositories/permission.repository';
+import { CredentialsRepository } from '../repositories/credentials.repository';
 import { TotvsService } from '../../../services/totvs.service';
 import { JWTUtil } from '../../../utils/jwt';
+import { UnauthorizedError } from '../../../utils/errors';
 import { logger } from '../../../config/logger';
 
 export interface AuthResponse {
@@ -25,12 +27,15 @@ export interface AuthResponse {
 export class AuthService {
 	private sessionRepository = new SessionRepository();
 	private permissionRepository = new PermissionRepository();
+	private credentialsRepository = new CredentialsRepository();
 	private totvsService = new TotvsService();
 
 	async login(data: LoginDTO): Promise<AuthResponse> {
 		logger.debug('Login attempt', { username: data.username });
 
 		const totvsResponse = await this.totvsService.validateLogin(data.username, data.password);
+
+		await this.credentialsRepository.store(data.username, data.password);
 
 		const permissions = await this.permissionRepository.findByLogin(data.username);
 
@@ -64,12 +69,19 @@ export class AuthService {
 	async logout(token: string): Promise<void> {
 		logger.debug('Logout request', { token: token.substring(0, 10) + '...' });
 		await this.sessionRepository.delete(token);
+		
+		const payload = JWTUtil.decodeToken(token);
+		if (payload?.login) {
+			await this.credentialsRepository.delete(payload.login);
+		}
+		
 		logger.info('User logged out successfully');
 	}
 
 	async logoutAll(login: string): Promise<void> {
 		logger.info('Logout all sessions request', { login });
 		await this.sessionRepository.deleteAllUserSessions(login);
+		await this.credentialsRepository.delete(login);
 		logger.info('All sessions logged out successfully', { login });
 	}
 
@@ -77,6 +89,21 @@ export class AuthService {
 		logger.debug('Token refresh request');
 
 		const payload = JWTUtil.verifyToken(refreshToken);
+		
+		const storedPassword = await this.credentialsRepository.get(payload.login);
+		if (!storedPassword) {
+			logger.warn('Credentials not found for refresh token', { login: payload.login });
+			throw new UnauthorizedError('Credentials not found. Please login again.');
+		}
+
+		logger.debug('Re-authenticating with TOTVS on token refresh', { login: payload.login });
+		try {
+			await this.totvsService.validateLogin(payload.login, storedPassword);
+		} catch (error) {
+			logger.warn('TOTVS re-authentication failed on token refresh', { login: payload.login, error });
+			throw new UnauthorizedError('TOTVS authentication failed. Please login again.');
+		}
+
 		const permissions = await this.permissionRepository.findByLogin(payload.login);
 
 		const newPayload = {
