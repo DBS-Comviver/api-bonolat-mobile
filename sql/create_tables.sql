@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `dbs_fr_caixas` (
     `data_lote` DATE NULL,
     `quantidade` DECIMAL(30, 5) NOT NULL,
     `ordem_prod` INT NULL,
-    `batalada` VARCHAR(40) NULL,
+    `batelada` VARCHAR(40) NULL,
     `usuario` VARCHAR(45) NULL,
     `data_hora_fracionamento` DATETIME NULL,
     PRIMARY KEY (`cod_caixa`),
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `dbs_fr_caixas` (
     INDEX `idx_cod_lote` (`cod_lote`),
     INDEX `idx_usuario` (`usuario`),
     INDEX `idx_ordem_prod` (`ordem_prod`),
-    INDEX `idx_batalada` (`batalada`)
+    INDEX `idx_batelada` (`batelada`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `dbs_fr_itens_caixa` (

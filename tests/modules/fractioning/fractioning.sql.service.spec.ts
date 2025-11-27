@@ -35,7 +35,7 @@ describe('FractioningSqlService', () => {
 			expect(result).toBeDefined();
 			expect(result.cod_estabel).toBe('2202');
 			expect(result.ordem_prod).toBe(1547);
-			expect(result.batalada).toBe('BAT-001');
+			expect(result.batelada).toBe('BAT-001');
 
 			const savedBox = await prisma.dbsFrCaixas.findUnique({
 				where: { cod_caixa: result.cod_caixa },
@@ -85,7 +85,7 @@ describe('FractioningSqlService', () => {
 
 			const result = await sqlService.saveBox(payload);
 			expect(result.ordem_prod).toBeNull();
-			expect(result.batalada).toBeNull();
+			expect(result.batelada).toBeNull();
 		});
 	});
 
@@ -95,7 +95,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -107,7 +107,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 2202,
-					batalada: 'BAT-002',
+					batelada: 'BAT-002',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -136,7 +136,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -157,7 +157,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -169,7 +169,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 2202,
-					batalada: 'BAT-002',
+					batelada: 'BAT-002',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -190,7 +190,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -211,7 +211,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -239,7 +239,7 @@ describe('FractioningSqlService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',

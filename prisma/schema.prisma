@@ -46,7 +46,7 @@ model DbsFrCaixas {
   data_lote              DateTime?
   quantidade             Decimal                 @db.Decimal(30, 5)
   ordem_prod             Int?
-  batalada               String?                 @db.VarChar(40)
+  batelada               String?                 @db.VarChar(40)
   usuario                String?                 @db.VarChar(45)
   data_hora_fracionamento DateTime?
 

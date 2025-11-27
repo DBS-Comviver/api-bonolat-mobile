@@ -68,7 +68,7 @@ describe('FractioningService', () => {
 
 			expect(savedBox).toBeDefined();
 			expect(savedBox?.ordem_prod).toBe(1547);
-			expect(savedBox?.batalada).toBe('BAT-001');
+			expect(savedBox?.batelada).toBe('BAT-001');
 		});
 
 		it('should handle missing ordem_producao and batelada', async () => {
@@ -103,7 +103,7 @@ describe('FractioningService', () => {
 
 			expect(savedBox).toBeDefined();
 			expect(savedBox?.ordem_prod).toBeNull();
-			expect(savedBox?.batalada).toBeNull();
+			expect(savedBox?.batelada).toBeNull();
 		});
 	});
 
@@ -113,7 +113,7 @@ describe('FractioningService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -135,7 +135,7 @@ describe('FractioningService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -157,7 +157,7 @@ describe('FractioningService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',
@@ -178,7 +178,7 @@ describe('FractioningService', () => {
 				data: {
 					cod_estabel: '2202',
 					ordem_prod: 1547,
-					batalada: 'BAT-001',
+					batelada: 'BAT-001',
 					usuario: 'testuser',
 					it_codigo: '3066865',
 					cod_deposito: 'SIL',

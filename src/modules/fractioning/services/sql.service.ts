@@ -80,7 +80,7 @@ export class FractioningSqlService {
 				data_lote: detalhes[0]?.data_fabricacao ?? null,
 				quantidade: payload.quantidade,
 				ordem_prod,
-				batalada: payload.batelada,
+				batelada: payload.batelada,
 				usuario: payload.usuario,
 				data_hora_fracionamento: new Date(),
 			},
@@ -119,7 +119,7 @@ export class FractioningSqlService {
 		}
 
 		if (filters.batelada) {
-			where.batalada = { contains: filters.batelada, mode: "insensitive" };
+			where.batelada = { contains: filters.batelada, mode: "insensitive" };
 		}
 
 		const boxes = await prisma.dbsFrCaixas.findMany({
@@ -137,7 +137,7 @@ export class FractioningSqlService {
 			cod_deposito: box.cod_deposito,
 			cod_local: box.cod_local,
 			ordem_producao: box.ordem_prod?.toString(),
-			batelada: box.batalada ?? undefined,
+			batelada: box.batelada ?? undefined,
 		}));
 	}
 
