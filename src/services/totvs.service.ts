@@ -1,9 +1,18 @@
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { UnauthorizedError } from '../utils/errors';
+import { CredentialsRepository } from '../modules/auth/repositories/credentials.repository';
 import https from 'https';
 import http from 'http';
 import { URL } from 'url';
+import type {
+	FractioningItemResponse,
+	FractioningDepositResponse,
+	FractioningLocationResponse,
+	FractioningBatchResponse,
+	FractioningBoxResponse,
+	FractioningFinalizeResponse
+} from '../modules/fractioning/types/fractioning.types';
 
 export interface TotvsLoginResponse {
 	desc_erro: string;
@@ -11,54 +20,19 @@ export interface TotvsLoginResponse {
 	login: string;
 }
 
-export interface FractioningItemResponse {
-	it_codigo: string;
-	desc_item: string;
-}
-
-export interface FractioningDepositResponse {
-	cod_depos: string;
-	nome: string;
-}
-
-export interface FractioningLocationResponse {
-	cod_local: string;
-	nome: string;
-}
-
-export interface FractioningBatchResponse {
-	lote: string;
-	dt_lote: string;
-}
-
-export interface FractioningBoxResponse {
-	it_codigo: string;
-	desc_item: string;
-	quant_usada: string;
-	mensagem: string;
-}
-
-export interface FractioningFinalizeResponse {
-	desc_erro: string;
-}
-
 export class TotvsService {
 	private static sharedCookies: Map<string, string> = new Map();
+	private static isRefreshingLogin: Map<string, boolean> = new Map();
+	private credentialsRepository = new CredentialsRepository();
 	
 	private get cookies(): Map<string, string> {
 		return TotvsService.sharedCookies;
 	}
 
 	private getBaseUrl(): string {
-		if (env.TOTVS_API_ENVIRONMENT === 'production') {
-			return 'http://totvs.asperbras.com/dts/datasul-rest';
-		}
 		return env.TOTVS_API_BASE_URL;
 	}
 
-	private getDomainKey(url: URL): string {
-		return `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}`;
-	}
 
 	private parseCookies(setCookieHeaders: string | string[] | undefined): Map<string, string> {
 		const cookieMap = new Map<string, string>();
@@ -84,8 +58,7 @@ export class TotvsService {
 		return cookieMap;
 	}
 
-	private getCookieHeader(url: URL): string {
-		const domainKey = this.getDomainKey(url);
+	private getCookieHeader(): string {
 		const cookies: string[] = [];
 
 		for (const [name, value] of this.cookies.entries()) {
@@ -102,7 +75,7 @@ export class TotvsService {
 		
 		for (const [name, value] of newCookies.entries()) {
 			this.cookies.set(name, value);
-			logger.debug('Cookie stored', { name, domain: this.getDomainKey(url) });
+			logger.debug('Cookie stored', { name });
 		}
 	}
 
@@ -140,34 +113,34 @@ export class TotvsService {
 		throw new UnauthorizedError('Invalid username or password');
 	}
 
-	async getItem(it_codigo: string): Promise<FractioningItemResponse> {
+	async getItem(it_codigo: string, userLogin?: string): Promise<FractioningItemResponse> {
 		const baseUrl = this.getBaseUrl();
 		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=4&it_codigo=${encodeURIComponent(it_codigo)}`;
-		return this.makeRequestWithoutAuth<FractioningItemResponse>(url);
+		return this.makeRequestWithoutAuth<FractioningItemResponse>(url, 5, userLogin);
 	}
 
-	async getDeposits(cod_estabel: string): Promise<FractioningDepositResponse[]> {
+	async getDeposits(cod_estabel: string, userLogin?: string): Promise<FractioningDepositResponse[]> {
 		const baseUrl = this.getBaseUrl();
 		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=1&cod_estabel=${encodeURIComponent(cod_estabel)}`;
-		return this.makeRequestWithoutAuth<FractioningDepositResponse[]>(url);
+		return this.makeRequestWithoutAuth<FractioningDepositResponse[]>(url, 5, userLogin);
 	}
 
-	async getLocations(cod_estabel: string, cod_deposito: string): Promise<FractioningLocationResponse[]> {
+	async getLocations(cod_estabel: string, cod_deposito: string, userLogin?: string): Promise<FractioningLocationResponse[]> {
 		const baseUrl = this.getBaseUrl();
 		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=2&cod_estabel=${encodeURIComponent(cod_estabel)}&cod_deposito=${encodeURIComponent(cod_deposito)}`;
-		return this.makeRequestWithoutAuth<FractioningLocationResponse[]>(url);
+		return this.makeRequestWithoutAuth<FractioningLocationResponse[]>(url, 5, userLogin);
 	}
 
-	async getBatches(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string): Promise<FractioningBatchResponse> {
+	async getBatches(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string, userLogin?: string): Promise<FractioningBatchResponse> {
 		const baseUrl = this.getBaseUrl();
 		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=3&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}&cod_deposito=${encodeURIComponent(cod_deposito)}&cod_local=${encodeURIComponent(cod_local)}`;
-		return this.makeRequestWithoutAuth<FractioningBatchResponse>(url);
+		return this.makeRequestWithoutAuth<FractioningBatchResponse>(url, 5, userLogin);
 	}
 
-	async getBoxReturn(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string, cod_lote: string, quantidade: number): Promise<FractioningBoxResponse> {
+	async getBoxReturn(cod_estabel: string, it_codigo: string, cod_deposito: string, cod_local: string, cod_lote: string, quantidade: number, userLogin?: string): Promise<FractioningBoxResponse> {
 		const baseUrl = this.getBaseUrl();
 		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?tipo=5&cod_estabel=${encodeURIComponent(cod_estabel)}&it_codigo=${encodeURIComponent(it_codigo)}&cod_deposito=${encodeURIComponent(cod_deposito)}&cod_local=${encodeURIComponent(cod_local)}&cod_lote=${encodeURIComponent(cod_lote)}&quantidade=${encodeURIComponent(quantidade)}`;
-		return this.makeRequestWithoutAuth<FractioningBoxResponse>(url);
+		return this.makeRequestWithoutAuth<FractioningBoxResponse>(url, 5, userLogin);
 	}
 
 	async finalizeFractioning(
@@ -179,7 +152,8 @@ export class TotvsService {
 		quantidade: number,
 		dados_baixa: string,
 		ordem_producao?: string,
-		batelada?: string
+		batelada?: string,
+		userLogin?: string
 	): Promise<FractioningFinalizeResponse> {
 		const baseUrl = this.getBaseUrl();
 
@@ -195,14 +169,14 @@ export class TotvsService {
 		});
 
 		if (ordem_producao) {
-			params.append('ordem_producao', ordem_producao);
+			params.append('op', ordem_producao);
 		}
 		if (batelada) {
 			params.append('batelada', batelada);
 		}
 
 		const url = `${baseUrl}/resources/prg/cpp/v1/escp1001?${params.toString()}`;
-		return this.makeRequestWithoutAuth<FractioningFinalizeResponse>(url);
+		return this.makeRequestWithoutAuth<FractioningFinalizeResponse>(url, 5, userLogin);
 	}
 
 	private async makeRequest(login: string, senha: string, urlString: string, maxRedirects: number = 5): Promise<TotvsLoginResponse> {
@@ -215,7 +189,7 @@ export class TotvsService {
 			const url = new URL(urlString);
 			const authHeader = this.createBasicAuth(login, senha);
 
-			const cookieHeader = this.getCookieHeader(url);
+			const cookieHeader = this.getCookieHeader();
 			const headers: Record<string, string> = {
 				'Authorization': `Basic ${authHeader}`,
 				'Content-Type': 'application/json',
@@ -318,7 +292,7 @@ export class TotvsService {
 		});
 	}
 
-	private async makeRequestWithoutAuth<T>(urlString: string, maxRedirects: number = 5): Promise<T> {
+	private async makeRequestWithoutAuth<T>(urlString: string, maxRedirects: number = 5, userLogin?: string): Promise<T> {
 		return new Promise((resolve, reject) => {
 			if (maxRedirects <= 0) {
 				reject(new Error('Too many redirects'));
@@ -327,7 +301,7 @@ export class TotvsService {
 
 			const url = new URL(urlString);
 
-			const cookieHeader = this.getCookieHeader(url);
+			const cookieHeader = this.getCookieHeader();
 			const headers: Record<string, string> = {
 				'Content-Type': 'application/json',
 			};
@@ -364,8 +338,50 @@ export class TotvsService {
 							to: redirectUrl, 
 							statusCode: res.statusCode 
 						});
+
+						if (redirectUrl.includes('totvs-login') || redirectUrl.includes('loginForm')) {
+							logger.warn('TOTVS redirect to login page detected', { redirectUrl, originalUrl: urlString, userLogin });
+
+							if (userLogin && !TotvsService.isRefreshingLogin.get(userLogin)) {
+								TotvsService.isRefreshingLogin.set(userLogin, true);
+								logger.info('Attempting automatic TOTVS login refresh', { userLogin });
+
+								this.credentialsRepository.get(userLogin)
+									.then((storedPassword) => {
+										if (!storedPassword) {
+											TotvsService.isRefreshingLogin.set(userLogin, false);
+											throw new Error('TOTVS session expired. User credentials not found. Please login again.');
+										}
+										
+										return this.validateLogin(userLogin, storedPassword);
+									})
+									.then(() => {
+										logger.info('TOTVS automatic login successful, retrying original request', { userLogin });
+										TotvsService.isRefreshingLogin.set(userLogin, false);
+
+										return this.makeRequestWithoutAuth<T>(urlString, maxRedirects - 1, userLogin);
+									})
+									.then(resolve)
+									.catch((loginError) => {
+										logger.error('TOTVS automatic login failed', { error: loginError.message, userLogin });
+										TotvsService.isRefreshingLogin.set(userLogin, false);
+										reject(new Error(`TOTVS session expired and automatic login failed: ${loginError.message}`));
+									});
+								return;
+							} else if (!userLogin) {
+								reject(new Error('TOTVS session expired. Redirect to login page detected but user login not provided.'));
+								return;
+							} else {
+								setTimeout(() => {
+									this.makeRequestWithoutAuth<T>(urlString, maxRedirects - 1, userLogin)
+										.then(resolve)
+										.catch(reject);
+								}, 1000);
+								return;
+							}
+						}
 						
-						this.makeRequestWithoutAuth<T>(redirectUrl, maxRedirects - 1)
+						this.makeRequestWithoutAuth<T>(redirectUrl, maxRedirects - 1, userLogin)
 							.then(resolve)
 							.catch(reject);
 						return;
@@ -380,15 +396,100 @@ export class TotvsService {
 
 				res.on('end', () => {
 					if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
-						reject(new Error(`TOTVS API error: ${res.statusCode} ${res.statusMessage}`));
+						logger.error('TOTVS API error', {
+							statusCode: res.statusCode,
+							statusMessage: res.statusMessage,
+							url: urlString,
+							responseBody: data.substring(0, 500),
+						});
+						reject(new Error(`TOTVS API error: ${res.statusCode} ${res.statusMessage || 'Unknown error'}`));
 						return;
+					}
+
+					if (!data || data.trim() === '') {
+						logger.warn('TOTVS API returned empty response', { url: urlString });
+						
+
+						if (urlString.includes('tipo=6')) {
+							const defaultResponse = {
+								total: 1,
+								hasNext: false,
+								items: [{
+									mensagem: 'OK',
+									it_codigo: '',
+									desc_item: '',
+									quant_usada: 0,
+								}],
+							} as T;
+							resolve(defaultResponse);
+							return;
+						}
+
+						try {
+							const responseData = {} as T;
+							resolve(responseData);
+						} catch (error) {
+							reject(new Error(`TOTVS API returned empty response and cannot create default object`));
+						}
+						return;
+					}
+
+					if (data.trim().startsWith('<') || data.trim().startsWith('<!--')) {
+						logger.warn('TOTVS returned HTML instead of JSON (likely login page)', { 
+							url: urlString,
+							responsePreview: data.substring(0, 200)
+						});
+						
+						if (userLogin && !TotvsService.isRefreshingLogin.get(userLogin)) {
+							TotvsService.isRefreshingLogin.set(userLogin, true);
+							logger.info('Attempting automatic TOTVS login refresh due to HTML response', { userLogin });
+
+							this.credentialsRepository.get(userLogin)
+								.then((storedPassword) => {
+									if (!storedPassword) {
+										TotvsService.isRefreshingLogin.set(userLogin, false);
+										reject(new Error('TOTVS session expired. User credentials not found. Please login again.'));
+										return;
+									}
+									
+									return this.validateLogin(userLogin, storedPassword);
+								})
+								.then(() => {
+									logger.info('TOTVS automatic login successful, retrying original request', { userLogin });
+									TotvsService.isRefreshingLogin.set(userLogin, false);
+
+									return this.makeRequestWithoutAuth<T>(urlString, maxRedirects - 1, userLogin);
+								})
+								.then(resolve)
+								.catch((loginError) => {
+									logger.error('TOTVS automatic login failed', { error: loginError.message, userLogin });
+									TotvsService.isRefreshingLogin.set(userLogin, false);
+									reject(new Error(`TOTVS session expired and automatic login failed: ${loginError.message}`));
+								});
+							return;
+						} else if (!userLogin) {
+							reject(new Error('TOTVS returned HTML (login page) but user login not provided'));
+							return;
+						} else {
+							setTimeout(() => {
+								this.makeRequestWithoutAuth<T>(urlString, maxRedirects - 1, userLogin)
+									.then(resolve)
+									.catch(reject);
+							}, 1000);
+							return;
+						}
 					}
 
 					try {
 						const responseData = JSON.parse(data) as T;
 						resolve(responseData);
 					} catch (error) {
-						reject(new Error(`Failed to parse TOTVS response: ${error}`));
+						logger.error('Failed to parse TOTVS response', {
+							url: urlString,
+							responseBody: data.substring(0, 500),
+							error: error instanceof Error ? error.message : String(error),
+						});
+						reject(new Error(`Failed to parse TOTVS response: ${error instanceof Error ? error.message : String(error)}. Response: ${data.substring(0, 200)}`));
 					}
 				});
 			});
@@ -401,4 +502,3 @@ export class TotvsService {
 		});
 	}
 }
-

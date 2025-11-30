@@ -1,5 +1,4 @@
 import { TotvsService } from '../../../services/totvs.service';
-import { logger } from '../../../config/logger';
 import {
 	GetItemDTO,
 	GetDepositsDTO,
@@ -12,44 +11,61 @@ import {
 	GetBoxMaterialsDTO,
 } from '../dtos/fractioning.dto';
 import { FractioningSqlService } from './sql.service';
+import { ValidationError } from '../../../utils/errors';
+import type { FractioningBoxResponse, FractioningFinalizeResponse } from '../types/fractioning.types';
 
 export class FractioningService {
 	private totvsService = new TotvsService();
 	private sqlService = new FractioningSqlService();
 
-	async getItem(data: GetItemDTO) {
-		logger.debug('Get item request', { it_codigo: data.it_codigo });
-		return this.totvsService.getItem(data.it_codigo);
+	private hasErrorMessage(mensagem?: string): boolean {
+		if (!mensagem) return false;
+		return mensagem.toUpperCase().includes('ERRO');
 	}
 
-	async getDeposits(data: GetDepositsDTO) {
-		logger.debug('Get deposits request', { cod_estabel: data.cod_estabel });
-		return this.totvsService.getDeposits(data.cod_estabel);
+	private validateBoxResponse(response: FractioningBoxResponse): void {
+		if (response.items && response.items.length > 0) {
+			const errorItems = response.items.filter(item => this.hasErrorMessage(item.mensagem));
+			if (errorItems.length > 0) {
+				const errorMessages = errorItems.map(item => item.mensagem).join('; ');
+				throw new ValidationError(errorMessages);
+			}
+		}
 	}
 
-	async getLocations(data: GetLocationsDTO) {
-		logger.debug('Get locations request', { cod_estabel: data.cod_estabel, cod_deposito: data.cod_deposito });
-		return this.totvsService.getLocations(data.cod_estabel, data.cod_deposito);
+	private validateFinalizeResponse(response: FractioningFinalizeResponse): void {
+		if (response.items && response.items.length > 0) {
+			const errorItems = response.items.filter(item => this.hasErrorMessage(item.mensagem));
+			if (errorItems.length > 0) {
+				const errorMessages = errorItems.map(item => item.mensagem).join('; ');
+				throw new ValidationError(errorMessages);
+			}
+		}
 	}
 
-	async getBatches(data: GetBatchesDTO) {
-		logger.debug('Get batches request', { cod_estabel: data.cod_estabel, it_codigo: data.it_codigo, cod_deposito: data.cod_deposito, cod_local: data.cod_local });
-		return this.totvsService.getBatches(data.cod_estabel, data.it_codigo, data.cod_deposito, data.cod_local);
+	async getItem(data: GetItemDTO, userLogin?: string) {
+		return this.totvsService.getItem(data.it_codigo, userLogin);
 	}
 
-	async getBoxReturn(data: GetBoxReturnDTO) {
-		logger.debug('Get box return request', { cod_estabel: data.cod_estabel, it_codigo: data.it_codigo, cod_deposito: data.cod_deposito, cod_local: data.cod_local, cod_lote: data.cod_lote, quantidade: data.quantidade });
-		return this.totvsService.getBoxReturn(data.cod_estabel, data.it_codigo, data.cod_deposito, data.cod_local, data.cod_lote, data.quantidade);
+	async getDeposits(data: GetDepositsDTO, userLogin?: string) {
+		return this.totvsService.getDeposits(data.cod_estabel, userLogin);
+	}
+
+	async getLocations(data: GetLocationsDTO, userLogin?: string) {
+		return this.totvsService.getLocations(data.cod_estabel, data.cod_deposito, userLogin);
+	}
+
+	async getBatches(data: GetBatchesDTO, userLogin?: string) {
+		return this.totvsService.getBatches(data.cod_estabel, data.it_codigo, data.cod_deposito, data.cod_local, userLogin);
+	}
+
+	async getBoxReturn(data: GetBoxReturnDTO, userLogin?: string) {
+		const response = await this.totvsService.getBoxReturn(data.cod_estabel, data.it_codigo, data.cod_deposito, data.cod_local, data.cod_lote, data.quantidade, userLogin);
+		this.validateBoxResponse(response);
+		return response;
 	}
 
 	async finalizeFractioning(data: FinalizeFractioningDTO, userLogin?: string) {
-		logger.debug('Finalize fractioning request', {
-			cod_estabel: data.cod_estabel,
-			it_codigo: data.it_codigo,
-			ordem_producao: data.ordem_producao,
-			batelada: data.batelada,
-		});
-
 		const response = await this.totvsService.finalizeFractioning(
 			data.cod_estabel,
 			data.it_codigo,
@@ -59,8 +75,11 @@ export class FractioningService {
 			data.quantidade,
 			data.dados_baixa,
 			data.ordem_producao,
-			data.batelada
+			data.batelada,
+			userLogin
 		);
+
+		this.validateFinalizeResponse(response);
 
 		await this.sqlService.saveBox({
 			cod_estabel: data.cod_estabel,

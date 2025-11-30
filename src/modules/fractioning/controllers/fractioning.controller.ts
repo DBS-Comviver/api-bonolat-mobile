@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { FractioningService } from '../services/fractioning.service';
 import { AuthRequest } from '../../../middlewares/auth.middleware';
 import {
@@ -26,6 +26,13 @@ export class FractioningController {
 		if (!hasAccess) {
 			throw new ForbiddenError('Access denied to fractioning module');
 		}
+	}
+
+	private validateUser(req: AuthRequest): string {
+		if (!req.user) {
+			throw new UnauthorizedError('Unauthorized');
+		}
+		return req.user.login;
 	}
 
 	/**
@@ -61,14 +68,11 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async getItem(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		const login = this.validateUser(req);
+		await this.validateFractioningAccess(login);
 
 		const body = getItemSchema.parse(req.query);
-		const result = await fractioningService.getItem(body);
+		const result = await fractioningService.getItem(body, login);
 		return res.json(result);
 	}
 
@@ -107,14 +111,11 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async getDeposits(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		const login = this.validateUser(req);
+		await this.validateFractioningAccess(login);
 
 		const body = getDepositsSchema.parse(req.query);
-		const result = await fractioningService.getDeposits(body);
+		const result = await fractioningService.getDeposits(body, login);
 		return res.json(result);
 	}
 
@@ -159,14 +160,11 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async getLocations(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		const login = this.validateUser(req);
+		await this.validateFractioningAccess(login);
 
 		const body = getLocationsSchema.parse(req.query);
-		const result = await fractioningService.getLocations(body);
+		const result = await fractioningService.getLocations(body, login);
 		return res.json(result);
 	}
 
@@ -223,14 +221,11 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async getBatches(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		const login = this.validateUser(req);
+		await this.validateFractioningAccess(login);
 
 		const body = getBatchesSchema.parse(req.query);
-		const result = await fractioningService.getBatches(body);
+		const result = await fractioningService.getBatches(body, login);
 		return res.json(result);
 	}
 
@@ -301,14 +296,11 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async getBoxReturn(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		const login = this.validateUser(req);
+		await this.validateFractioningAccess(login);
 
 		const body = getBoxReturnSchema.parse(req.query);
-		const result = await fractioningService.getBoxReturn(body);
+		const result = await fractioningService.getBoxReturn(body, login);
 		return res.json(result);
 	}
 
@@ -374,23 +366,41 @@ export class FractioningController {
 	 *             schema:
 	 *               type: object
 	 *               properties:
-	 *                 desc_erro:
-	 *                   type: string
-	 *                   example: "OK - O ITEM FOI ADICIONADO AO ESTOQUE!"
+	 *                 total:
+	 *                   type: number
+	 *                   example: 1
+	 *                 hasNext:
+	 *                   type: boolean
+	 *                   example: false
+	 *                 items:
+	 *                   type: array
+	 *                   items:
+	 *                     type: object
+	 *                     properties:
+	 *                       mensagem:
+	 *                         type: string
+	 *                         example: "OK - O ITEM FOI ADICIONADO AO ESTOQUE!"
+	 *                       it_codigo:
+	 *                         type: string
+	 *                         example: "3037854"
+	 *                       desc_item:
+	 *                         type: string
+	 *                         example: "ITEM DESCRIÇÃO"
+	 *                       quant_usada:
+	 *                         type: number
+	 *                         example: 0
 	 *       401:
 	 *         description: Unauthorized
 	 *       403:
 	 *         description: Access denied to fractioning module
 	 */
 	async finalizeFractioning(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		this.validateUser(req);
+		await this.validateFractioningAccess(req.user!.login);
 
 		const body = finalizeFractioningSchema.parse(req.body);
-		const result = await fractioningService.finalizeFractioning(body, req.user.login);
+		const login = this.validateUser(req);
+		const result = await fractioningService.finalizeFractioning(body, login);
 		return res.json(result);
 	}
 
@@ -465,11 +475,8 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async searchBoxes(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		this.validateUser(req);
+		await this.validateFractioningAccess(req.user!.login);
 
 		const body = searchBoxesSchema.parse(req.query);
 		const result = await fractioningService.searchBoxes(body);
@@ -537,11 +544,8 @@ export class FractioningController {
 	 *         description: Box not found
 	 */
 	async getBoxMaterials(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		this.validateUser(req);
+		await this.validateFractioningAccess(req.user!.login);
 
 		const body = getBoxMaterialsSchema.parse(req.query);
 		const result = await fractioningService.getBoxMaterials(body);
@@ -618,11 +622,8 @@ export class FractioningController {
 	 *         description: Box not found
 	 */
 	async printLabels(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		this.validateUser(req);
+		await this.validateFractioningAccess(req.user!.login);
 
 		const body = printLabelSchema.parse(req.body);
 		const result = await fractioningService.buildPrintLabel(body);
@@ -662,14 +663,12 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async listOrders(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		this.validateUser(req);
+		await this.validateFractioningAccess(req.user!.login);
 
 		listOrdersSchema.parse(req.query);
-		const result = await fractioningService.listOrders(req.user.login);
+		const login = this.validateUser(req);
+		const result = await fractioningService.listOrders(login);
 		return res.json({ ordens: result });
 	}
 
@@ -714,14 +713,12 @@ export class FractioningController {
 	 *         description: Access denied to fractioning module
 	 */
 	async listBateladas(req: AuthRequest, res: Response) {
-		if (!req.user) {
-			throw new UnauthorizedError('Unauthorized');
-		}
-
-		await this.validateFractioningAccess(req.user.login);
+		this.validateUser(req);
+		await this.validateFractioningAccess(req.user!.login);
 
 		const body = listBateladasSchema.parse(req.query);
-		const result = await fractioningService.listBateladas(req.user.login, body.ordem_producao);
+		const login = this.validateUser(req);
+		const result = await fractioningService.listBateladas(login, body.ordem_producao);
 		return res.json({ bateladas: result });
 	}
 }
