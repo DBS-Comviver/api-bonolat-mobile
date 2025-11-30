@@ -29,6 +29,11 @@ export class TotvsService {
 		return TotvsService.sharedCookies;
 	}
 
+	private clearCookies(): void {
+		TotvsService.sharedCookies.clear();
+		logger.debug('TOTVS cookies cleared');
+	}
+
 	private getBaseUrl(): string {
 		return env.TOTVS_API_BASE_URL;
 	}
@@ -346,15 +351,16 @@ export class TotvsService {
 								TotvsService.isRefreshingLogin.set(userLogin, true);
 								logger.info('Attempting automatic TOTVS login refresh', { userLogin });
 
-								this.credentialsRepository.get(userLogin)
-									.then((storedPassword) => {
-										if (!storedPassword) {
-											TotvsService.isRefreshingLogin.set(userLogin, false);
-											throw new Error('TOTVS session expired. User credentials not found. Please login again.');
-										}
-										
-										return this.validateLogin(userLogin, storedPassword);
-									})
+							this.credentialsRepository.get(userLogin)
+								.then((storedPassword) => {
+									if (!storedPassword) {
+										this.clearCookies();
+										TotvsService.isRefreshingLogin.set(userLogin, false);
+										throw new UnauthorizedError('TOTVS session expired. User credentials not found. Please login again.');
+									}
+									
+									return this.validateLogin(userLogin, storedPassword);
+								})
 									.then(() => {
 										logger.info('TOTVS automatic login successful, retrying original request', { userLogin });
 										TotvsService.isRefreshingLogin.set(userLogin, false);
@@ -365,7 +371,13 @@ export class TotvsService {
 									.catch((loginError) => {
 										logger.error('TOTVS automatic login failed', { error: loginError.message, userLogin });
 										TotvsService.isRefreshingLogin.set(userLogin, false);
-										reject(new Error(`TOTVS session expired and automatic login failed: ${loginError.message}`));
+										
+										if (loginError instanceof UnauthorizedError) {
+											reject(loginError);
+										} else {
+											this.clearCookies();
+											reject(new UnauthorizedError(`TOTVS session expired. Please login again.`));
+										}
 									});
 								return;
 							} else if (!userLogin) {
@@ -464,7 +476,13 @@ export class TotvsService {
 								.catch((loginError) => {
 									logger.error('TOTVS automatic login failed', { error: loginError.message, userLogin });
 									TotvsService.isRefreshingLogin.set(userLogin, false);
-									reject(new Error(`TOTVS session expired and automatic login failed: ${loginError.message}`));
+									
+									if (loginError instanceof UnauthorizedError) {
+										reject(loginError);
+									} else {
+										this.clearCookies();
+										reject(new UnauthorizedError(`TOTVS session expired. Please login again.`));
+									}
 								});
 							return;
 						} else if (!userLogin) {
