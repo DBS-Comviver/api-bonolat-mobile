@@ -101,7 +101,7 @@ export class FractioningService {
 			ordem_producao: data.ordem_producao,
 			batelada: data.batelada,
 			usuario: userLogin,
-		});
+		}, userLogin);
 
 		return response;
 	}

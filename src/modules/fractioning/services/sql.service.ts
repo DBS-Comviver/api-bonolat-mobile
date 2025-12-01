@@ -1,6 +1,8 @@
 import { PrismaClient } from "../../../generated/prisma-client/client";
+import { TotvsService } from "../../../services/totvs.service";
 
 const prisma = new PrismaClient();
+const totvsService = new TotvsService();
 
 interface SaveBoxPayload {
 	cod_estabel: string;
@@ -65,7 +67,7 @@ const toNumericOrder = (value?: string) => {
 };
 
 export class FractioningSqlService {
-	async saveBox(payload: SaveBoxPayload) {
+	async saveBox(payload: SaveBoxPayload, userLogin?: string) {
 		const detalhes = parseDetails(payload.dados_baixa);
 		const ordem_prod = toNumericOrder(payload.ordem_producao);
 
@@ -87,11 +89,20 @@ export class FractioningSqlService {
 		});
 
 		for (const detail of detalhes) {
+			let descItem = detail.it_codigo;
+			
+			try {
+				const itemInfo = await totvsService.getItem(detail.it_codigo, userLogin);
+				if (itemInfo && itemInfo.desc_item) {
+					descItem = itemInfo.desc_item;
+				}
+			} catch {}
+
 			const item = await prisma.dbsFrItensCaixa.create({
 				data: {
 					cod_caixa: box.cod_caixa,
 					it_codigo: detail.it_codigo,
-					desc_item: detail.it_codigo,
+					desc_item: descItem,
 					quantidade: detail.quantidade,
 				},
 			});
