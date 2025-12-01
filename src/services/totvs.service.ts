@@ -343,7 +343,7 @@ export class TotvsService {
 							to: redirectUrl, 
 							statusCode: res.statusCode 
 						});
-
+						
 						if (redirectUrl.includes('totvs-login') || redirectUrl.includes('loginForm')) {
 							logger.warn('TOTVS redirect to login page detected', { redirectUrl, originalUrl: urlString, userLogin });
 

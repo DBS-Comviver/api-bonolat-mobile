@@ -81,12 +81,20 @@ export class FractioningService {
 
 		this.validateFinalizeResponse(response);
 
+		let descItem = data.it_codigo;
+		try {
+			const itemInfo = await this.totvsService.getItem(data.it_codigo, userLogin);
+			if (itemInfo && itemInfo.desc_item) {
+				descItem = itemInfo.desc_item;
+			}
+		} catch { }
+
 		await this.sqlService.saveBox({
 			cod_estabel: data.cod_estabel,
 			cod_deposito: data.cod_deposito,
 			cod_local: data.cod_local,
 			it_codigo: data.it_codigo,
-			desc_item: data.it_codigo,
+			desc_item: descItem,
 			cod_lote: data.cod_lote,
 			quantidade: data.quantidade,
 			dados_baixa: data.dados_baixa,
@@ -114,7 +122,7 @@ export class FractioningService {
 		return this.sqlService.listBateladas(usuario, ordem_producao);
 	}
 
-	async buildPrintLabel(payload: PrintLabelDTO) {
+	async buildPrintLabel(payload: PrintLabelDTO): Promise<string> {
 		const now = new Date();
 		const day = String(now.getDate()).padStart(2, "0");
 		const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -122,18 +130,22 @@ export class FractioningService {
 		const batelada = payload.batelada || "00000";
 		const ordem = payload.ordem_producao || "00000";
 
-		const label = [
-			"VALIDAÇÃO E RATEIO DE NF",
-			"BONOLAT",
-			"^XA",
-			"^CF0,40",
-			`^FO30,40^FD Batelada: ${batelada} OP: ${ordem} ^FS`,
-			"^FO150,120",
-			"^BQN,2,10",
-			`^FDLA,Batelada:${batelada}|OP:${ordem}|Data:${day}-${month}-${year}^FS`,
-			"^XZ",
-		].join("\n");
+		const zplLabels: string[] = [];
 
-		return { success: true, label };
+		for (let i = 0; i < payload.quantidade; i++) {
+			const label = [
+				"^XA",
+				"^CF0,40",
+				`^FO30,40^FD Batelada: ${batelada} OP: ${ordem} ^FS`,
+				"^FO150,120",
+				"^BQN,2,10",
+				`^FDLA,Batelada:${batelada}|OP:${ordem}|Data:${day}-${month}-${year}^FS`,
+				"^XZ",
+			].join("\n");
+
+			zplLabels.push(label);
+		}
+
+		return zplLabels.join("\n");
 	}
 }

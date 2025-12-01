@@ -599,21 +599,17 @@ export class FractioningController {
 	 *                 description: "Number of labels to print"
 	 *     responses:
 	 *       200:
-	 *         description: ZPL code for label printing
+	 *         description: ZPL file for label printing
 	 *         content:
-	 *           application/json:
+	 *           application/zpl:
 	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 success:
-	 *                   type: boolean
-	 *                   example: true
-	 *                 zpl:
-	 *                   type: string
-	 *                   example: "^XA^CF0,40^FO30,40^FD...^XZ"
-	 *                 message:
-	 *                   type: string
-	 *                   example: "Label generated successfully"
+	 *               type: string
+	 *               example: "^XA^CF0,40^FO30,40^FD...^XZ"
+	 *         headers:
+	 *           Content-Disposition:
+	 *             schema:
+	 *               type: string
+	 *               example: "attachment; filename=\"etiqueta_CAIXA001_1234567890.zpl\""
 	 *       401:
 	 *         description: Unauthorized
 	 *       403:
@@ -626,8 +622,13 @@ export class FractioningController {
 		await this.validateFractioningAccess(req.user!.login);
 
 		const body = printLabelSchema.parse(req.body);
-		const result = await fractioningService.buildPrintLabel(body);
-		return res.json(result);
+		const zplCode = await fractioningService.buildPrintLabel(body);
+
+		const filename = `etiqueta_${body.box_code}_${Date.now()}.zpl`;
+
+		res.setHeader('Content-Type', 'application/zpl');
+		res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+		return res.send(zplCode);
 	}
 
 	/**
